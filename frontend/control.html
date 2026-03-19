@@ -15,7 +15,10 @@ header{height:40px;background:#10141a;border-bottom:1px solid #1e2738;display:fl
 .hbtn:hover{color:#b8c8dc;}.hbtn.on{background:#152030;border-color:#2a5080;color:#6aa8e0;}
 #clock{font-size:11px;color:#3a4a5e;font-variant-numeric:tabular-nums;}
 .body{display:flex;flex:1;overflow:hidden;}
-.sb{width:180px;background:#10141a;border-right:1px solid #1e2738;display:flex;flex-direction:column;flex-shrink:0;}
+.sb{width:180px;background:#10141a;border-right:1px solid #1e2738;display:flex;flex-direction:column;flex-shrink:0;transition:width 0.25s ease,opacity 0.25s ease;}
+.sb.collapsed{width:0;opacity:0;pointer-events:none;border-right:none;}
+#sidebar-toggle{background:none;border:1px solid #1e2738;border-radius:4px;color:#3a4a5e;cursor:pointer;font-size:0.9rem;padding:3px 8px;line-height:1;}
+#sidebar-toggle:hover{background:#1e2738;color:#b8c8dc;}
 .sbh{padding:6px 8px;border-bottom:1px solid #1e2738;display:flex;justify-content:space-between;align-items:center;}
 .sbh span{font-size:9px;font-weight:600;color:#3a4a5e;text-transform:uppercase;letter-spacing:1px;}
 .sbs{padding:4px 6px;border-bottom:1px solid #1e2738;}
@@ -61,6 +64,7 @@ header{height:40px;background:#10141a;border-bottom:1px solid #1e2738;display:fl
   <div class="pill"><div class="led" id="sled"></div>Live <strong id="hcount">—</strong></div>
   <div class="pill"><strong id="hlate" style="color:#ff4444">—</strong> late</div>
   <div class="pill">Updated <strong id="hupdated">—</strong></div>
+  <button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
   <div class="ml">
     <span id="clock"></span>
     <button class="hbtn" id="mapbtn">🗺 Map</button>
@@ -761,6 +765,21 @@ function resize(){
 }
 window.addEventListener('resize',resize);
 loadColours();resize();refresh().then(()=>animLoop());setInterval(refresh,15000);
+
+// ── Sidebar toggle ─────────────────────────────────────────────────────────
+function toggleSidebar(){
+  const sb=document.querySelector('.sb');
+  const btn=document.getElementById('sidebar-toggle');
+  const collapsed=sb.classList.toggle('collapsed');
+  btn.textContent=collapsed?'▶':'☰';
+  btn.title=collapsed?'Open sidebar':'Close sidebar';
+}
+if(window.innerWidth<768){
+  document.querySelector('.sb').classList.add('collapsed');
+  const btn=document.getElementById('sidebar-toggle');
+  if(btn){btn.textContent='▶';btn.title='Open sidebar';}
+}
+
 </script>
 </body>
 </html>

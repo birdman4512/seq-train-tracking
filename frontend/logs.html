@@ -62,10 +62,10 @@
     return 'line-INFO';
   }
 
-  const BASE=(()=>{const p=location.pathname;const f=p.endsWith('/')?p.replace(/\/+$/,''):p.substring(0,p.lastIndexOf('/'));return f==='/'?'':f;})();
+  const BASE='';
 async function fetchLogs() {
     try {
-      const r = await fetch(BASE+'/api/logs');
+      const r = await fetch('api/logs');
       const d = await r.json();
       if (d.error) {
         document.getElementById('log-container').textContent = 'Error: ' + d.error;

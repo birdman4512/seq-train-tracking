@@ -93,14 +93,9 @@ header{height:40px;background:#10141a;border-bottom:1px solid #1e2738;display:fl
 // ─────────────────────────────────────────────────────────────────────────────
 // BASE URL — works at root or any subfolder
 // ─────────────────────────────────────────────────────────────────────────────
-const BASE = (()=>{
-  const p = location.pathname;
-  // Strip trailing slash, then strip filename to get folder
-  const folder = p.endsWith('/') ? p.replace(/\/+$/, '') : p.substring(0, p.lastIndexOf('/'));
-  // Never return just '/' — return '' for root so BASE+'/api/...' = '/api/...'
-  return folder === '/' ? '' : folder;
-})();
-document.getElementById('mapbtn').onclick = () => location.href = BASE + '/';
+// Relative URLs - work at root or any subfolder
+const BASE = '';
+document.getElementById('mapbtn').onclick = () => location.href = './';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COLOURS
@@ -123,7 +118,7 @@ function lc(rid){
 async function loadColours(){
   const retry=async()=>{
     try{
-      const[r1,r2]=await Promise.all([fetch(BASE+'/api/debug/routes'),fetch(BASE+'/api/debug/live')]);
+      const[r1,r2]=await Promise.all([fetch('api/debug/routes'),fetch('api/debug/live')]);
       const[d1,d2]=await Promise.all([r1.json(),r2.json()]);
       let n=0;
       for(const rt of(d1.gtfs_routes||[])){const c=rt.gtfs_color||rt.computed_colour;if(c&&c!=='#5bb8ff'){RMAP[rt.route_id]=c;n++;}}
@@ -735,7 +730,7 @@ function selectTrain(id){const v=vehicles.find(x=>x.id===id);if(!v)return;if(sel
 // ─────────────────────────────────────────────────────────────────────────────
 async function refresh(){
   try{
-    const r=await fetch(BASE+'/api/vehicles'),d=await r.json();
+    const r=await fetch('api/vehicles'),d=await r.json();
     vehicles=d.vehicles||[];
     const late=vehicles.filter(v=>(v.delay_seconds||0)>60).length;
     document.getElementById('hcount').textContent=d.count||0;

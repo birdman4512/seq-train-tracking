@@ -6,14 +6,14 @@
 <style>
 :root{--bg:#0b0d10;--p:#10141a;--p2:#161b23;--bd:#1e2738;--tx:#b8c8dc;--dm:#3a4a5e;--wh:#e8f0fa;--rd:#ff4444;--gn:#3ddc84;--bl:#4488ff;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px;}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
 header{height:42px;background:var(--p);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;}
-.logo{font-weight:700;font-size:13px;color:var(--wh);} .logo span{color:var(--dm);font-weight:400;}
+.logo{font-weight:700;font-size:13px;color:var(--wh);}.logo span{color:var(--dm);font-weight:400;}
 .pill{background:var(--p2);border:1px solid var(--bd);border-radius:4px;padding:2px 9px;font-size:11px;color:var(--dm);display:flex;align-items:center;gap:5px;}
-.pill .led{width:5px;height:5px;border-radius:50%;background:var(--gn);} .pill .led.red{background:var(--rd);} .pill strong{color:var(--tx);}
+.pill .led{width:5px;height:5px;border-radius:50%;background:var(--gn);}.pill .led.red{background:var(--rd);}.pill strong{color:var(--tx);}
 .ml{margin-left:auto;display:flex;gap:6px;align-items:center;}
 .hbtn{background:var(--p2);border:1px solid var(--bd);border-radius:4px;padding:3px 11px;font-size:11px;font-family:inherit;color:var(--dm);cursor:pointer;}
-.hbtn:hover{border-color:#3a4a5e;color:var(--tx);} .hbtn.on{background:#152030;border-color:#2a5080;color:#6aa8e0;}
+.hbtn:hover{border-color:#3a4a5e;color:var(--tx);}.hbtn.on{background:#152030;border-color:#2a5080;color:#6aa8e0;}
 #clock{font-size:11px;color:var(--dm);font-variant-numeric:tabular-nums;min-width:55px;text-align:right;}
 .body{display:flex;flex:1;overflow:hidden;}
 .sb{width:188px;background:var(--p);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;}
@@ -22,19 +22,18 @@ header{height:42px;background:var(--p);border-bottom:1px solid var(--bd);display
 .cnt{background:var(--p2);border:1px solid var(--bd);border-radius:3px;padding:1px 5px;font-size:10px;color:var(--tx);}
 .sbs{padding:5px 7px;border-bottom:1px solid var(--bd);}
 .sbs input{width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:3px;color:var(--tx);font-family:inherit;font-size:11px;padding:4px 7px;outline:none;}
-.sbs input:focus{border-color:#2a5080;} .sbs input::placeholder{color:var(--dm);}
+.sbs input:focus{border-color:#2a5080;}.sbs input::placeholder{color:var(--dm);}
 .tl{overflow-y:auto;flex:1;padding:3px;}
 .en{border-radius:4px;padding:5px 7px;margin-bottom:2px;cursor:pointer;border:1px solid transparent;}
-.en:hover{background:var(--p2);} .en.sel{background:#0e1e30;border-color:#2a5080;}
-.et{display:flex;justify-content:space-between;align-items:center;margin-bottom:1px;}
-.er{font-size:10px;font-weight:700;display:flex;align-items:center;gap:4px;}
-.rd{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.en:hover{background:var(--p2);}.en.sel{background:#0e1e30;border-color:#2a5080;}
+.et{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;}
+.rb{font-size:8px;padding:1px 5px;border-radius:2px;font-weight:700;color:#fff;}
 .dtg{font-size:8px;padding:1px 3px;border-radius:2px;font-weight:600;}
-.dtg.ok{background:#0a1f12;color:var(--gn);} .dtg.late{background:#1f0a0a;color:var(--rd);} .dtg.early{background:#0a0f1f;color:var(--bl);}
-.ed{font-size:9px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dtg.ok{background:#0a1f12;color:var(--gn);}.dtg.late{background:#1f0a0a;color:var(--rd);}.dtg.early{background:#0a0f1f;color:var(--bl);}
+.ed{font-size:10px;font-weight:600;color:var(--wh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .em{font-size:8px;color:var(--dm);margin-top:1px;}
-.cw{flex:1;position:relative;overflow:hidden;background:var(--bg);}
-#sch{display:block;cursor:grab;} #sch:active{cursor:grabbing;}
+.cw{flex:1;position:relative;overflow:hidden;}
+#sch{display:block;cursor:grab;}#sch:active{cursor:grabbing;}
 .zb{position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;gap:3px;}
 .zz{width:28px;height:28px;background:rgba(16,20,26,.95);border:1px solid var(--bd);color:var(--tx);font-size:16px;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;}
 .zz:hover{background:var(--p2);}
@@ -42,23 +41,22 @@ header{height:42px;background:var(--p);border-bottom:1px solid var(--bd);display
 .isc{padding:8px 10px;border-bottom:1px solid var(--bd);}
 .itl{font-size:9px;font-weight:600;color:var(--dm);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
 .ir{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #111820;font-size:10px;}
-.ir:last-child{border:none;} .ir .lb{color:var(--dm);}
+.ir:last-child{border:none;}.ir .lb{color:var(--dm);}
 .ir .vl{color:var(--tx);font-weight:500;text-align:right;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ir .vl.ok{color:var(--gn);} .ir .vl.warn{color:var(--rd);} .ir .vl.info{color:var(--bl);}
+.ir .vl.ok{color:var(--gn);}.ir .vl.warn{color:var(--rd);}.ir .vl.info{color:var(--bl);}
 .sl{overflow-y:auto;flex:1;padding:8px 10px;}
 .sr{display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:1px solid #111820;font-size:10px;}
 .sr:last-child{border:none;}
 .sn{width:14px;height:14px;border-radius:50%;background:var(--p2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--dm);flex-shrink:0;}
 .sm{flex:1;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sd{font-size:9px;font-weight:600;} .sd.ok{color:var(--gn);} .sd.late{color:var(--rd);}
+.sd{font-size:9px;font-weight:600;}.sd.ok{color:var(--gn);}.sd.late{color:var(--rd);}
 .ar{display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:1px solid #111820;font-size:10px;cursor:pointer;border-radius:3px;}
-.ar:hover{background:var(--p2);} .ar:last-child{border-bottom:none;}
+.ar:hover{background:var(--p2);}.ar:last-child{border-bottom:none;}
 .ab{width:30px;height:14px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0;}
 .ad{flex:1;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.at{font-size:9px;color:var(--dm);white-space:nowrap;}
-.adl{font-size:8px;font-weight:600;} .adl.ok{color:var(--gn);} .adl.late{color:var(--rd);}
+.at{font-size:9px;color:var(--dm);}.adl{font-size:8px;font-weight:600;}.adl.ok{color:var(--gn);}.adl.late{color:var(--rd);}
 .nos{flex:1;display:flex;align-items:center;justify-content:center;color:var(--dm);font-size:10px;text-align:center;line-height:2;padding:16px;}
-::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-track{background:var(--p);} ::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:var(--p);}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px;}
 </style>
 </head>
 <body>
@@ -69,7 +67,7 @@ header{height:42px;background:var(--p);border-bottom:1px solid var(--bd);display
   <div class="pill">Updated <strong id="hupdated">—</strong></div>
   <div class="ml">
     <span id="clock">00:00:00</span>
-    <button class="hbtn" onclick="location.href='/'">🗺 Map</button>
+    <button class="hbtn" onclick="location.href=BASE+'/'">🗺 Map</button>
     <button class="hbtn on">🖥 Control</button>
   </div>
 </header>
@@ -95,9 +93,10 @@ header{height:42px;background:var(--p);border-bottom:1px solid var(--bd);display
   </div>
 </div>
 <script>
+const BASE=(()=>{const p=location.pathname;return p.endsWith('/')?p.slice(0,-1):p.substring(0,p.lastIndexOf('/'));})();
 // ── Colours ───────────────────────────────────────────────────────────────────
 const RMAP={};
-const RULES=[
+const CRULES=[
   {k:'SH',c:'#00aeef'},{k:'SP',c:'#1c63b7'},{k:'VL',c:'#f5a400'},
   {k:'RW',c:'#f47920'},{k:'FG',c:'#e3000f'},{k:'DO',c:'#e0007f'},
   {k:'AP',c:'#6b21a8'},{k:'CL',c:'#ffd600'},{k:'BE',c:'#6fbe44'},
@@ -110,16 +109,13 @@ const RULES=[
   {k:'ROS',c:'#f47920'},{k:'BAN',c:'#6b21a8'},
 ];
 function lc(rid){
-  if(!rid)return'#5a6478';
-  if(RMAP[rid])return RMAP[rid];
-  const u=rid.toUpperCase();
-  for(const{k,c}of RULES)if(u.includes(k))return c;
-  return'#7a8899';
+  if(!rid)return'#5a6478';if(RMAP[rid])return RMAP[rid];
+  const u=rid.toUpperCase();for(const{k,c}of CRULES)if(u.includes(k))return c;return'#7a8899';
 }
 async function loadColours(){
   const go=async()=>{
     try{
-      const[r1,r2]=await Promise.all([fetch('/api/debug/routes'),fetch('/api/debug/live')]);
+      const[r1,r2]=await Promise.all([fetch(BASE+'/api/debug/routes'),fetch(BASE+'/api/debug/live')]);
       const[d1,d2]=await Promise.all([r1.json(),r2.json()]);
       let n=0;
       for(const rt of(d1.gtfs_routes||[])){const c=rt.gtfs_color||rt.computed_colour;if(c&&c!=='#5bb8ff'){RMAP[rt.route_id]=c;n++;}}
@@ -130,559 +126,594 @@ async function loadColours(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// SCHEMATIC LAYOUT
+// NETWORK TOPOLOGY
 //
-// Each line is an independent horizontal snake.  Roma Street is a VERTICAL
-// AXIS at x=0 (canvas centre).  Every line's stop list is split at Roma Street:
-//   • Stops before Roma  → placed to the LEFT  of x=0
-//   • Stops after Roma   → placed to the RIGHT of x=0
+// Coordinates are in "logical units" with Roma Street at (0,0).
+// x = east (+) / west (-).  One unit ≈ one station spacing.
+// y = track slot. 0 = main corridor. Branches use integer y offsets:
+//   -1, -2 = branches above (drawn above the main line)
+//   +1, +2 = branches below (drawn below the main line)
 //
-// Lines above Roma Street (dir:'up') and below (dir:'dn') are stacked
-// vertically.  Within each direction the lines are arranged so that lines
-// sharing the most track with each other are adjacent.
+// The schematic is designed so:
+//   LEFT  of Roma St → south/west lines (Ipswich, Springfield, Beenleigh, Gold Coast, Cleveland)
+//   RIGHT of Roma St → east/north lines (Central → Bowen Hills → branches)
 //
-// Each line snakes: if it has more stops than fit in one horizontal row it
-// wraps, curving at the edge of the canvas and continuing on the next row.
+// Junction y-offsets are chosen so lines never cross unless they share track.
 // ══════════════════════════════════════════════════════════════════════════════
 
-// Line definitions.  stops[] is in OUTBOUND order FROM Roma Street.
-// 'left' stops are city-end stops that precede Roma Street.
-// We list them terminus→Roma Street so index 0 is the far end.
-const LINES = [
-  // ── ABOVE Roma Street ──────────────────────────────────────────────────────
-  { id:'CAB', col:'#7b2d8b', side:'up', name:'Caboolture/SC',
-    left:  ['Gympie North','Nambour','Woombye','Landsborough','Beerwah','Glasshouse Mountains','Beerburrum','Elimbah','Caboolture','Morayfield','Burpengary','Narangba','Petrie','Lawnton','Strathpine','Bald Hills','Carseldine','Northgate','Eagle Junction','Bowen Hills','Fortitude Valley','Central'],
-    right: [] },
+// Y-slot assignments (track slots relative to main corridor y=0):
+// y = 0  : Main corridor: Roma St ↔ Central ↔ FV ↔ BH ↔ EJ ↔ Northgate ↔ CAB/KCL main
+// y =-1  : Ferny Grove branch (peels off at Bowen Hills, goes west along northern slot)
+// y =-2  : Shorncliffe / Airport / Doomben (peel off at Eagle Junction / Northgate)
+// y =-3  : Doomben (separate from Shorncliffe)
+// y =-1.5: Kippa-Ring (peels off at Petrie)
+// y =+1  : South/Beenleigh/Gold Coast corridor (peels off at Roma St going west-ish)
+// y =+2  : Cleveland branch (peels off at Boggo Road)
+// y =+1.5: Ipswich/Springfield corridor (peels off at Roma St)
 
-  { id:'KCL', col:'#00b5cc', side:'up', name:'Redcliffe',
-    left:  ['Kippa-Ring','Rothwell','Mango Hill East','Mango Hill','Murrumba Downs','Kallangur','Lawnton','Bray Park','Strathpine','Bald Hills','Carseldine','Northgate','Eagle Junction','Bowen Hills','Fortitude Valley','Central'],
-    right: [] },
+// S = spacing multiplier. We'll scale everything to the canvas in buildLayout.
+// Use integer or half-integer x values; the layout engine will scale to fit.
 
-  { id:'SHO', col:'#00aeef', side:'up', name:'Shorncliffe',
-    left:  ['Shorncliffe','Sandgate','Deagon','North Boondall','Boondall','Nudgee','Banyo','Bindha','Northgate','Nundah','Toombul','Eagle Junction','Wooloowin','Albion','Bowen Hills','Fortitude Valley','Central'],
-    right: [] },
+const N = {
+  // ── y=0  MAIN CORRIDOR: Roma St → Gympie North ──────────────────────────
+  'Roma Street':          {x:  0, y:  0},
+  'Central':              {x:  2, y:  0},
+  'Fortitude Valley':     {x:  3, y:  0},
+  'Bowen Hills':          {x:  4, y:  0},
+  'Eagle Junction':       {x:  5, y:  0},
+  'Northgate':            {x:  6, y:  0},
+  'Carseldine':           {x:  7, y:  0},
+  'Bald Hills':           {x:  8, y:  0},
+  'Strathpine':           {x:  9, y:  0},
+  'Lawnton':              {x: 10, y:  0},
+  'Petrie':               {x: 11, y:  0},
+  'Narangba':             {x: 12, y:  0},
+  'Burpengary':           {x: 13, y:  0},
+  'Morayfield':           {x: 14, y:  0},
+  'Caboolture':           {x: 15, y:  0},
+  'Elimbah':              {x: 16, y:  0},
+  'Beerburrum':           {x: 17, y:  0},
+  'Glasshouse Mountains': {x: 18, y:  0},
+  'Beerwah':              {x: 19, y:  0},
+  'Landsborough':         {x: 20, y:  0},
+  'Woombye':              {x: 21, y:  0},
+  'Nambour':              {x: 22, y:  0},
+  'Gympie North':         {x: 23, y:  0},
 
-  { id:'AIR', col:'#6b21a8', side:'up', name:'Airport',
-    left:  ['International Airport','Domestic Airport','Eagle Junction','Wooloowin','Albion','Bowen Hills','Fortitude Valley','Central'],
-    right: [] },
+  // ── y=-1  FERNY GROVE: peels off Bowen Hills (4,0) at 45° NE, runs WEST ──
+  // Peel: (4,0)→(5,-1) is the 45° segment; then continues west
+  'Windsor':              {x:  5, y: -1},
+  'Wilston':              {x:  4, y: -1},
+  'Newmarket':            {x:  3, y: -1},
+  'Alderley':             {x:  2, y: -1},
+  'Enoggera':             {x:  1, y: -1},
+  'Gaythorne':            {x:  0, y: -1},
+  'Mitchelton':           {x: -1, y: -1},
+  'Oxford Park':          {x: -2, y: -1},
+  'Grovely':              {x: -3, y: -1},
+  'Keperra':              {x: -4, y: -1},
+  'Ferny Grove':          {x: -5, y: -1},
 
-  { id:'DOO', col:'#e0007f', side:'up', name:'Doomben',
-    left:  ['Doomben','Ascot','Hendra','Clayfield','Eagle Junction','Wooloowin','Albion','Bowen Hills','Fortitude Valley','Central'],
-    right: [] },
+  // ── y=-1  SHORNCLIFFE inner: peels off Eagle Junction (5,0) at 45° NE ────
+  // Two lines share this segment: SHO and AIR both go EJ(5,0)→Wooloowin(6,-1)→Albion(7,-1)
+  'Wooloowin':            {x:  6, y: -1},
+  'Albion':               {x:  7, y: -1},
 
-  { id:'FER', col:'#e3000f', side:'up', name:'Ferny Grove',
-    left:  ['Ferny Grove','Keperra','Grovely','Oxford Park','Mitchelton','Gaythorne','Enoggera','Alderley','Newmarket','Wilston','Windsor','Bowen Hills','Fortitude Valley','Central'],
-    right: [] },
+  // ── y=-2  SHORNCLIFFE outer: peels off Albion (7,-1) at 45° NE, runs east ─
+  // (7,-1)→(8,-2) is the peel; then continues east
+  'Bindha':               {x:  8, y: -2},
+  'Banyo':                {x:  9, y: -2},
+  'Nudgee':               {x: 10, y: -2},
+  'Boondall':             {x: 11, y: -2},
+  'North Boondall':       {x: 12, y: -2},
+  'Deagon':               {x: 13, y: -2},
+  'Sandgate':             {x: 14, y: -2},
+  'Shorncliffe':          {x: 15, y: -2},
 
-  // ── BELOW Roma Street ──────────────────────────────────────────────────────
-  { id:'IPL', col:'#f47920', side:'dn', name:'Ipswich/Rosewood',
-    left:  [],
-    right: ['Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Wacol','Gailes','Goodna','Redbank','Riverview','Dinmore','Bundamba','Booval','Ipswich','Walloon','Rosewood'] },
+  // ── y=-2  AIRPORT: shares Wooloowin/Albion, then peels at Albion (7,-1) ───
+  // Albion(7,-1) → DomAir(8,-2) at 45°, IntAir one step further east
+  'Domestic Airport':     {x:  8, y: -3},
+  'International Airport':{x:  9, y: -3},
 
-  { id:'SPR', col:'#1c63b7', side:'dn', name:'Springfield',
-    left:  [],
-    right: ['Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Richlands','Springfield','Springfield Central'] },
+  // ── y=-3  DOOMBEN: peels off Eagle Junction → Wooloowin, then diverges ────
+  // EJ(5,0)→Wooloowin(6,-1)→Clayfield(7,-2)→(8,-3)→Doomben
+  // Wooloowin shared with SHO/AIR; Clayfield is Doomben's next step
+  'Clayfield':            {x:  7, y: -2},
+  'Hendra':               {x:  8, y: -2.5},
+  'Ascot':                {x:  9, y: -2.5},
+  'Doomben':              {x: 10, y: -2.5},
 
-  { id:'BEL', col:'#6fbe44', side:'dn', name:'Beenleigh',
-    left:  [],
-    right: ['South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh'] },
+  // ── y=-1  KIPPA-RING: peels off Petrie (11,0) at 45° NE, runs east ────────
+  'Kallangur':            {x: 12, y: -1},
+  'Murrumba Downs':       {x: 13, y: -1},
+  'Mango Hill':           {x: 14, y: -1},
+  'Mango Hill East':      {x: 15, y: -1},
+  'Rothwell':             {x: 16, y: -1},
+  'Kippa-Ring':           {x: 17, y: -1},
 
-  { id:'GOL', col:'#f5a400', side:'dn', name:'Gold Coast',
-    left:  [],
-    right: ['South Brisbane','South Bank','Boggo Road','Altandi','Loganlea','Beenleigh','Ormeau','Pimpama','Coomera','Helensvale','Nerang','Robina','Varsity Lakes'] },
+  // ── y=+1  SOUTH: peels off Roma St (0,0) at 45° SW, runs WEST ────────────
+  'South Brisbane':       {x: -1, y: +1},
+  'South Bank':           {x: -2, y: +1},
+  'Boggo Road':           {x: -3, y: +1},
+  'Dutton Park':          {x: -4, y: +1},
+  'Fairfield':            {x: -5, y: +1},
+  'Yeronga':              {x: -6, y: +1},
+  'Yeerongpilly':         {x: -7, y: +1},
+  'Moorooka':             {x: -8, y: +1},
+  'Rocklea':              {x: -9, y: +1},
+  'Salisbury':            {x:-10, y: +1},
+  'Coopers Plains':       {x:-11, y: +1},
+  'Banoon':               {x:-12, y: +1},
+  'Sunnybank':            {x:-13, y: +1},
+  'Altandi':              {x:-14, y: +1},
+  'Runcorn':              {x:-15, y: +1},
+  'Fruitgrove':           {x:-16, y: +1},
+  'Kuraby':               {x:-17, y: +1},
+  'Trinder Park':         {x:-18, y: +1},
+  'Woodridge':            {x:-19, y: +1},
+  'Kingston':             {x:-20, y: +1},
+  'Loganlea':             {x:-21, y: +1},
+  'Bethania':             {x:-22, y: +1},
+  'Edens Landing':        {x:-23, y: +1},
+  'Holmview':             {x:-24, y: +1},
+  'Beenleigh':            {x:-25, y: +1},
+  'Ormeau':               {x:-26, y: +1},
+  'Pimpama':              {x:-27, y: +1},
+  'Coomera':              {x:-28, y: +1},
+  'Helensvale':           {x:-29, y: +1},
+  'Nerang':               {x:-30, y: +1},
+  'Robina':               {x:-31, y: +1},
+  'Varsity Lakes':        {x:-32, y: +1},
 
-  { id:'CLV', col:'#ffd600', side:'dn', name:'Cleveland',
-    left:  [],
-    right: ['South Brisbane','South Bank','Boggo Road','Buranda','Coorparoo','Norman Park','Morningside','Cannon Hill','Murarrie','Hemmant','Lindum','Wynnum North','Wynnum','Wynnum Central','Manly','Lota','Thorneside','Birkdale','Wellington Point','Ormiston','Cleveland'] },
+  // ── y=+2  CLEVELAND: peels off Boggo Road (-3,+1) at 45° SW ─────────────
+  'Buranda':              {x: -4, y: +2},
+  'Coorparoo':            {x: -5, y: +2},
+  'Norman Park':          {x: -6, y: +2},
+  'Morningside':          {x: -7, y: +2},
+  'Cannon Hill':          {x: -8, y: +2},
+  'Murarrie':             {x: -9, y: +2},
+  'Hemmant':              {x:-10, y: +2},
+  'Lindum':               {x:-11, y: +2},
+  'Wynnum North':         {x:-12, y: +2},
+  'Wynnum':               {x:-13, y: +2},
+  'Wynnum Central':       {x:-14, y: +2},
+  'Manly':                {x:-15, y: +2},
+  'Lota':                 {x:-16, y: +2},
+  'Thorneside':           {x:-17, y: +2},
+  'Birkdale':             {x:-18, y: +2},
+  'Wellington Point':     {x:-19, y: +2},
+  'Ormiston':             {x:-20, y: +2},
+  'Cleveland':            {x:-21, y: +2},
+
+  // ── y=+3  IPSWICH/ROSEWOOD: peels off Roma St (0,0) at 45° SW ───────────
+  'Milton':               {x: -1, y: +3},
+  'Auchenflower':         {x: -2, y: +3},
+  'Toowong':              {x: -3, y: +3},
+  'Taringa':              {x: -4, y: +3},
+  'Indooroopilly':        {x: -5, y: +3},
+  'Chelmer':              {x: -6, y: +3},
+  'Graceville':           {x: -7, y: +3},
+  'Sherwood':             {x: -8, y: +3},
+  'Corinda':              {x: -9, y: +3},
+  'Oxley':                {x:-10, y: +3},
+  'Darra':                {x:-11, y: +3},
+  'Wacol':                {x:-12, y: +3},
+  'Gailes':               {x:-13, y: +3},
+  'Goodna':               {x:-14, y: +3},
+  'Redbank':              {x:-15, y: +3},
+  'Riverview':            {x:-16, y: +3},
+  'Dinmore':              {x:-17, y: +3},
+  'Bundamba':             {x:-18, y: +3},
+  'Booval':               {x:-19, y: +3},
+  'Ipswich':              {x:-20, y: +3},
+  'Walloon':              {x:-21, y: +3},
+  'Rosewood':             {x:-22, y: +3},
+
+  // ── y=+4  SPRINGFIELD: peels off Darra (-11,+3) at 45° SW ───────────────
+  'Richlands':            {x:-12, y: +4},
+  'Springfield':          {x:-13, y: +4},
+  'Springfield Central':  {x:-14, y: +4},
+};
+
+// ── SEGMENTS ────────────────────────────────────────────────────────────────
+// Each segment: {stops:[], lines:[{id,col}]}
+// Segments are drawn ONCE. Colour = the line(s) using it.
+// Branch points are where segment lists diverge.
+// This means Roma→Petrie is one segment shared by CAB+KCL, not two parallel lines.
+
+const LINE_META = {
+  CAB: {id:'CAB', col:'#7b2d8b'},
+  KCL: {id:'KCL', col:'#00b5cc'},
+  SHO: {id:'SHO', col:'#00aeef'},
+  AIR: {id:'AIR', col:'#6b21a8'},
+  DOO: {id:'DOO', col:'#e0007f'},
+  FER: {id:'FER', col:'#e3000f'},
+  BEL: {id:'BEL', col:'#6fbe44'},
+  GOL: {id:'GOL', col:'#f5a400'},
+  CLV: {id:'CLV', col:'#ffd600'},
+  IPL: {id:'IPL', col:'#f47920'},
+  SPR: {id:'SPR', col:'#1c63b7'},
+};
+
+// Segments: ordered stop arrays + which line IDs use them
+// Shared segments drawn as parallel offset stripes (one per line)
+const SEGMENTS = [
+  // ── MAIN CORRIDOR: Roma St → Petrie (CAB + KCL share) ───────────────────
+  {stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate','Carseldine','Bald Hills','Strathpine','Lawnton','Petrie'], lines:['CAB','KCL']},
+  // ── CAB only: Petrie → Gympie North ─────────────────────────────────────
+  {stops:['Petrie','Narangba','Burpengary','Morayfield','Caboolture','Elimbah','Beerburrum','Glasshouse Mountains','Beerwah','Landsborough','Woombye','Nambour','Gympie North'], lines:['CAB']},
+  // ── KCL only: Petrie → Kippa-Ring (peels NE at 45°) ────────────────────
+  {stops:['Petrie','Kallangur','Murrumba Downs','Mango Hill','Mango Hill East','Rothwell','Kippa-Ring'], lines:['KCL']},
+
+  // ── CITY LOOP shared: Roma St → Eagle Junction (SHO+AIR+DOO+FER all use city) ─
+  // They branch at Eagle Junction — Wooloowin/Albion is shared by SHO+AIR+DOO
+  {stops:['Eagle Junction','Wooloowin','Albion'], lines:['SHO','AIR']},
+  // ── DOO: Eagle Junction → Doomben via Clayfield ──────────────────────────
+  {stops:['Eagle Junction','Wooloowin','Clayfield','Hendra','Ascot','Doomben'], lines:['DOO']},
+  // ── SHO: Albion → Shorncliffe (branches north from Northgate area) ───────
+  {stops:['Albion','Bindha','Banyo','Nudgee','Boondall','North Boondall','Deagon','Sandgate','Shorncliffe'], lines:['SHO']},
+  // ── AIR: Albion → International Airport ─────────────────────────────────
+  {stops:['Albion','Domestic Airport','International Airport'], lines:['AIR']},
+
+  // ── FER: Bowen Hills → Ferny Grove (peels NE then runs west) ────────────
+  {stops:['Bowen Hills','Windsor','Wilston','Newmarket','Alderley','Enoggera','Gaythorne','Mitchelton','Oxford Park','Grovely','Keperra','Ferny Grove'], lines:['FER']},
+
+  // ── SOUTH SHARED: Roma St → Boggo Road (BEL+GOL+CLV) ───────────────────
+  {stops:['Roma Street','South Brisbane','South Bank','Boggo Road'], lines:['BEL','GOL','CLV']},
+  // ── BEL+GOL shared: Boggo Road → Beenleigh ──────────────────────────────
+  {stops:['Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh'], lines:['BEL','GOL']},
+  // ── GOL only: Beenleigh → Varsity Lakes ─────────────────────────────────
+  {stops:['Beenleigh','Ormeau','Pimpama','Coomera','Helensvale','Nerang','Robina','Varsity Lakes'], lines:['GOL']},
+  // ── CLV: Boggo Road → Cleveland (peels SE) ───────────────────────────────
+  {stops:['Boggo Road','Buranda','Coorparoo','Norman Park','Morningside','Cannon Hill','Murarrie','Hemmant','Lindum','Wynnum North','Wynnum','Wynnum Central','Manly','Lota','Thorneside','Birkdale','Wellington Point','Ormiston','Cleveland'], lines:['CLV']},
+
+  // ── IPSWICH SHARED: Roma St → Darra (IPL+SPR) ───────────────────────────
+  {stops:['Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra'], lines:['IPL','SPR']},
+  // ── IPL only: Darra → Rosewood ───────────────────────────────────────────
+  {stops:['Darra','Wacol','Gailes','Goodna','Redbank','Riverview','Dinmore','Bundamba','Booval','Ipswich','Walloon','Rosewood'], lines:['IPL']},
+  // ── SPR only: Darra → Springfield Central (peels SW) ────────────────────
+  {stops:['Darra','Richlands','Springfield','Springfield Central'], lines:['SPR']},
 ];
 
-// ── Layout constants ──────────────────────────────────────────────────────────
-const ROW_H = 56;    // px between row centres
-const LW    = 5;     // line thickness
-const SR    = 5;     // station dot radius
-const MIN_STOP_PX = 58; // minimum pixels between stations
+// Build LINES array for train positioning (each line's full stop sequence)
+const LINES = [
+  {id:'CAB',col:'#7b2d8b',stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate','Carseldine','Bald Hills','Strathpine','Lawnton','Petrie','Narangba','Burpengary','Morayfield','Caboolture','Elimbah','Beerburrum','Glasshouse Mountains','Beerwah','Landsborough','Woombye','Nambour','Gympie North']},
+  {id:'KCL',col:'#00b5cc',stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate','Carseldine','Bald Hills','Strathpine','Lawnton','Petrie','Kallangur','Murrumba Downs','Mango Hill','Mango Hill East','Rothwell','Kippa-Ring']},
+  {id:'SHO',col:'#00aeef',stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Wooloowin','Albion','Bindha','Banyo','Nudgee','Boondall','North Boondall','Deagon','Sandgate','Shorncliffe']},
+  {id:'AIR',col:'#6b21a8',stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Wooloowin','Albion','Domestic Airport','International Airport']},
+  {id:'DOO',col:'#e0007f',stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Wooloowin','Clayfield','Hendra','Ascot','Doomben']},
+  {id:'FER',col:'#e3000f',stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Windsor','Wilston','Newmarket','Alderley','Enoggera','Gaythorne','Mitchelton','Oxford Park','Grovely','Keperra','Ferny Grove']},
+  {id:'BEL',col:'#6fbe44',stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh']},
+  {id:'GOL',col:'#f5a400',stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh','Ormeau','Pimpama','Coomera','Helensvale','Nerang','Robina','Varsity Lakes']},
+  {id:'CLV',col:'#ffd600',stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Buranda','Coorparoo','Norman Park','Morningside','Cannon Hill','Murarrie','Hemmant','Lindum','Wynnum North','Wynnum','Wynnum Central','Manly','Lota','Thorneside','Birkdale','Wellington Point','Ormiston','Cleveland']},
+  {id:'IPL',col:'#f47920',stops:['Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Wacol','Gailes','Goodna','Redbank','Riverview','Dinmore','Bundamba','Booval','Ipswich','Walloon','Rosewood']},
+  {id:'SPR',col:'#1c63b7',stops:['Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Richlands','Springfield','Springfield Central']},
+];
 
-// Layout state — rebuilt on resize
-let layout  = [];  // [{line, stops:[{name,x,y}]}]
-let canW=0, canH=0;
-let vp = {x:0, y:0, scale:1};
+// ── Layout ────────────────────────────────────────────────────────────────────
+let canW=0,canH=0,vp={x:0,y:0,scale:1};
+let px={};        // name → {x,y} in content/pixel space (Roma St = 0,0)
+let lsPx={};      // lineId → [{name,x,y}]
 
-function buildLayout(W, H) {
-  layout = [];
-
-  // Usable half-widths
-  const leftW  = W * 0.5 - 10;   // space left  of centre
-  const rightW = W * 0.5 - 10;   // space right of centre
-
-  // How many stops fit on one row (each side)
-  const leftPerRow  = Math.max(3, Math.floor(leftW  / MIN_STOP_PX));
-  const rightPerRow = Math.max(3, Math.floor(rightW / MIN_STOP_PX));
-
-  // Separate up/down lines and assign row offsets
-  // upLines   → rows at y = -ROW_H, -2*ROW_H, ...  (above Roma St)
-  // downLines → rows at y = +ROW_H, +2*ROW_H, ...  (below Roma St)
-  let upRowUsed   = 0;
-  let downRowUsed = 0;
-
-  for (const line of LINES) {
-    const leftStops  = line.left  || [];   // terminus … Central  (drawn left of Roma)
-    const rightStops = line.right || [];   // Milton … terminus   (drawn right of Roma)
-
-    // Build the full ordered stop array: leftStops (reversed so Central is nearest Roma)
-    // then Roma Street itself, then rightStops
-    // leftStops[0] = far terminus, leftStops[last] = Central (just before Roma)
-    // We'll place them from left edge → Roma Street
-    const allStops = [];
-
-    // Left side: distribute from far-left to Roma Street (x = -leftW to 0)
-    const leftRows = Math.max(1, Math.ceil(leftStops.length / leftPerRow));
-    let li = 0;
-    for (let r = 0; r < leftRows; r++) {
-      const inRow = Math.min(leftPerRow, leftStops.length - li);
-      if (inRow <= 0) break;
-      // Row Y offset from Roma Street
-      let rowY;
-      if (line.side === 'up') {
-        upRowUsed++;
-        rowY = -upRowUsed * ROW_H;
-      } else {
-        downRowUsed++;
-        rowY = downRowUsed * ROW_H;
-      }
-      const goRight = (r % 2 === 0); // first row: left terminus → Roma (goRight)
-      for (let j = 0; j < inRow; j++, li++) {
-        const name = leftStops[li];
-        // x: spread evenly from -leftW to 0
-        // goRight: j=0 at -leftW, j=inRow-1 near 0
-        // goLeft:  j=0 near 0, j=inRow-1 at -leftW
-        const frac = (inRow > 1) ? j / (inRow - 1) : 0.5;
-        const x = goRight
-          ? -leftW + frac * leftW
-          : -(frac * leftW);
-        allStops.push({ name, x, y: rowY });
-      }
-      if (r < leftRows - 1) upRowUsed++; // extra row for wrap
-    }
-
-    // Roma Street at (0, 0) — every line passes through here
-    allStops.push({ name: 'Roma Street', x: 0, y: 0, isRoma: true });
-
-    // Right side: distribute from Roma Street to far-right (x = 0 to rightW)
-    const rightRows = Math.max(1, Math.ceil(rightStops.length / rightPerRow));
-    let ri = 0;
-    for (let r = 0; r < rightRows; r++) {
-      const inRow = Math.min(rightPerRow, rightStops.length - ri);
-      if (inRow <= 0) break;
-      let rowY;
-      if (line.side === 'up') {
-        upRowUsed++;
-        rowY = -upRowUsed * ROW_H;
-      } else {
-        downRowUsed++;
-        rowY = downRowUsed * ROW_H;
-      }
-      const goRight = (r % 2 === 0);
-      for (let j = 0; j < inRow; j++, ri++) {
-        const name = rightStops[ri];
-        const frac = (inRow > 1) ? j / (inRow - 1) : 0.5;
-        const x = goRight
-          ? frac * rightW
-          : rightW - frac * rightW;
-        allStops.push({ name, x, y: rowY });
-      }
-      if (r < rightRows - 1) downRowUsed++;
-    }
-
-    layout.push({ line, stops: allStops });
-  }
+function buildLayout(W,H){
+  const xs=Object.values(N).map(n=>n.x), ys=Object.values(N).map(n=>n.y);
+  const xMin=Math.min(...xs),xMax=Math.max(...xs);
+  const yMin=Math.min(...ys),yMax=Math.max(...ys);
+  const xRange=xMax-xMin, yRange=yMax-yMin;
+  // Use different scales for x and y so tracks are clearly separated vertically
+  // X: fit 92% of canvas width; Y: fit 78% of canvas height
+  // But enforce that yScale >= xScale * 0.7 so branches have visible angle
+  const xScale=(W*0.92)/xRange;
+  const yScale=(H*0.78)/yRange;
+  // Use separate scales: x gets xScale, y gets a larger yScale for clear branch angles
+  const finalX = xScale;
+  const finalY = Math.max(yScale, xScale * 0.85);
+  px={};
+  for(const[nm,n] of Object.entries(N)) px[nm]={x:n.x*finalX, y:n.y*finalY};
+  lsPx={};
+  for(const ln of LINES)
+    lsPx[ln.id]=ln.stops.filter(nm=>px[nm]).map(nm=>({name:nm,...px[nm]}));
 }
 
 // ── Viewport ──────────────────────────────────────────────────────────────────
-function toCanvas(cx, cy) { return [cx * vp.scale + vp.x, cy * vp.scale + vp.y]; }
-function toContent(px, py) { return [(px - vp.x) / vp.scale, (py - vp.y) / vp.scale]; }
-
-// Roma Street is at content (0,0) — map to canvas centre
-function centreView() { vp.x = canW / 2; vp.y = canH / 2; }
-function resetView()  { vp = {x:0, y:0, scale:1}; centreView(); draw(); }
-
-function zoom(f, px, py) {
-  const c = document.getElementById('sch');
-  px = px ?? c.width / 2; py = py ?? c.height / 2;
-  const [wx, wy] = toContent(px, py);
-  vp.scale = Math.max(.1, Math.min(8, vp.scale * f));
-  vp.x = px - wx * vp.scale;
-  vp.y = py - wy * vp.scale;
-  draw();
+function toCanvas(cx,cy){return[cx*vp.scale+vp.x,cy*vp.scale+vp.y];}
+function toContent(px2,py){return[(px2-vp.x)/vp.scale,(py-vp.y)/vp.scale];}
+function centreView(){vp.x=canW/2;vp.y=canH/2;}
+function resetView(){vp={x:0,y:0,scale:1};centreView();draw();}
+function zoom(f,px2,py){
+  const c=document.getElementById('sch');
+  px2=px2??c.width/2;py=py??c.height/2;
+  const[wx,wy]=toContent(px2,py);
+  vp.scale=Math.max(.06,Math.min(12,vp.scale*f));
+  vp.x=px2-wx*vp.scale;vp.y=py-wy*vp.scale;draw();
 }
 
-// ── Train → position on diagram ───────────────────────────────────────────────
-function trainPos(v) {
-  // Find which line row this train belongs to
-  let row = layout.find(r => {
-    const u = v.route_id?.toUpperCase() || '';
-    return u.startsWith(r.line.id) || (lc(v.route_id) === r.line.col);
-  });
-  if (!row) row = layout[0];
-  const stops = row.stops;
-
-  const nn = s => s.toLowerCase()
-    .replace(/,?\s*platform\s*\d+\s*$/i, '')
-    .replace(/\s+station$/i, '').trim();
-  const nxt = nn(v.next_stops?.[0]?.stop_name || '');
-  const cur = nn(v.current_stop_name || '');
-  const fw  = w => w.split(' ')[0];
-
-  let ni = -1, ci = -1;
-  for (let i = 0; i < stops.length; i++) {
-    const sn = nn(stops[i].name);
-    if (ni < 0 && nxt && (sn === nxt || sn.startsWith(fw(nxt)) || nxt.startsWith(fw(sn)))) ni = i;
-    if (ci < 0 && cur && (sn === cur || sn.startsWith(fw(cur)) || cur.startsWith(fw(sn)))) ci = i;
+// ── Train position ────────────────────────────────────────────────────────────
+function trainPos(v){
+  let sl=null;
+  for(const ln of LINES){
+    const u=v.route_id?.toUpperCase()||'';
+    if(u.startsWith(ln.id)||(lc(v.route_id)===ln.col&&!sl)){sl=lsPx[ln.id];break;}
   }
-
-  if (ni < 0 && ci < 0) return stops[Math.floor(stops.length / 2)] || {x:0,y:0};
-  if (v.current_status === 'STOPPED_AT' || ni < 0) return stops[ci >= 0 ? ci : 0] || stops[0];
-  const fi = ci >= 0 ? ci : Math.max(0, ni - 1);
-  if (fi === ni) return stops[ni];
-  const a = stops[Math.min(fi, stops.length-1)];
-  const b = stops[Math.min(ni, stops.length-1)];
-  // Only interpolate if on same row (same y)
-  if (Math.abs(a.y - b.y) < 2) return { x: (a.x+b.x)/2, y: a.y };
-  return a;
+  if(!sl||!sl.length)sl=lsPx[LINES[0].id];
+  const nn=s=>s.toLowerCase().replace(/,?\s*platform\s*\d+\s*$/i,'').replace(/\s+station$/i,'').trim();
+  const nxt=nn(v.next_stops?.[0]?.stop_name||'');
+  const cur=nn(v.current_stop_name||'');
+  const fw=w=>w.split(' ')[0];
+  let ni=-1,ci=-1;
+  for(let i=0;i<sl.length;i++){
+    const sn=nn(sl[i].name);
+    if(ni<0&&nxt&&(sn===nxt||sn.startsWith(fw(nxt))||nxt.startsWith(fw(sn))))ni=i;
+    if(ci<0&&cur&&(sn===cur||sn.startsWith(fw(cur))||cur.startsWith(fw(sn))))ci=i;
+  }
+  if(ni<0&&ci<0)return sl[Math.floor(sl.length/2)]||{x:0,y:0};
+  if(v.current_status==='STOPPED_AT'||ni<0)return sl[ci>=0?ci:0]||sl[0];
+  const fi=ci>=0?ci:Math.max(0,ni-1);
+  if(fi===ni)return sl[ni];
+  const a=sl[Math.min(fi,sl.length-1)],b=sl[Math.min(ni,sl.length-1)];
+  return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};
 }
 
 // ── Draw ──────────────────────────────────────────────────────────────────────
-function draw() {
-  const cv  = document.getElementById('sch');
-  const ctx = cv.getContext('2d');
-  ctx.clearRect(0, 0, canW, canH);
-  ctx.fillStyle = '#0b0d10'; ctx.fillRect(0, 0, canW, canH);
+const LW=4.5,SR=4;
 
-  // Dot grid (screen-space, not transformed)
-  ctx.fillStyle = 'rgba(255,255,255,.02)';
-  for (let x = 24; x < canW; x += 24)
-    for (let y = 24; y < canH; y += 24) {
-      ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI*2); ctx.fill();
-    }
+function draw(){
+  const cv=document.getElementById('sch'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,canW,canH);
+  ctx.fillStyle='#0b0d10';ctx.fillRect(0,0,canW,canH);
+  ctx.fillStyle='rgba(255,255,255,.018)';
+  for(let x=24;x<canW;x+=24)for(let y=24;y<canH;y+=24){ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill();}
 
-  ctx.save();
-  ctx.translate(vp.x, vp.y);
-  ctx.scale(vp.scale, vp.scale);
+  ctx.save();ctx.translate(vp.x,vp.y);ctx.scale(vp.scale,vp.scale);
 
-  // ── Vertical Roma Street axis ───────────────────────────────────────────
-  // Find y-extent of all stops
-  let minY = 0, maxY = 0;
-  for (const row of layout)
-    for (const s of row.stops) { minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y); }
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-  ctx.lineWidth = 2 / vp.scale;
-  ctx.setLineDash([8/vp.scale, 6/vp.scale]);
-  ctx.beginPath(); ctx.moveTo(0, minY - ROW_H*0.5); ctx.lineTo(0, maxY + ROW_H*0.5); ctx.stroke();
-  ctx.setLineDash([]);
+  // ── Draw segments ────────────────────────────────────────────────────────
+  // Each segment is drawn once. If multiple lines share it, draw parallel stripes.
+  ctx.lineCap='round';ctx.lineJoin='round';
 
-  // ── Draw each line ─────────────────────────────────────────────────────
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for(const seg of SEGMENTS){
+    const stops=seg.stops.filter(s=>px[s]);
+    const lineObjs=seg.lines.map(id=>LINE_META[id]).filter(Boolean);
+    const n=lineObjs.length;
 
-  for (const row of layout) {
-    const { line, stops } = row;
-    if (stops.length < 2) continue;
+    for(let li=0;li<lineObjs.length;li++){
+      const ln=lineObjs[li];
+      ctx.strokeStyle=ln.col;
+      ctx.lineWidth=LW/vp.scale;
+      ctx.globalAlpha=0.88;
+      // Parallel offset for shared segments
+      const gap=3/vp.scale;
+      const off=(li-(n-1)/2)*gap;
 
-    ctx.strokeStyle = line.col;
-    ctx.lineWidth   = LW / vp.scale;
-    ctx.globalAlpha = 0.85;
-
-    // Draw segments. When y changes (row wrap), draw a bezier bend.
-    ctx.beginPath();
-    let prevX = stops[0].x, prevY = stops[0].y;
-    ctx.moveTo(prevX, prevY);
-
-    for (let i = 1; i < stops.length; i++) {
-      const s = stops[i];
-      if (Math.abs(s.y - prevY) > 2) {
-        // Row transition — S-curve
-        const my = (prevY + s.y) / 2;
-        ctx.bezierCurveTo(prevX, my, s.x, my, s.x, s.y);
-      } else {
-        ctx.lineTo(s.x, s.y);
+      for(let i=0;i<stops.length-1;i++){
+        const a=px[stops[i]],b=px[stops[i+1]];
+        if(!a||!b)continue;
+        const dx=b.x-a.x,dy=b.y-a.y,len2=Math.hypot(dx,dy)||1;
+        const ox=-dy/len2*off,oy=dx/len2*off;
+        ctx.beginPath();ctx.moveTo(a.x+ox,a.y+oy);ctx.lineTo(b.x+ox,b.y+oy);ctx.stroke();
       }
-      prevX = s.x; prevY = s.y;
+      ctx.globalAlpha=1;
     }
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // ── Station nodes ──────────────────────────────────────────────────
-    // Track label positions per y-row to avoid overlap
-    const labeledX = {};  // rowKey → last screen-x of label
-
-    stops.forEach((st, i) => {
-      if (st.isRoma) return; // drawn separately
-
-      const isTerminus = (i === 0 || i === stops.length - 1);
-      const r  = (isTerminus ? SR + 1 : SR * 0.75) / vp.scale;
-      const lw = 1.8 / vp.scale;
-
-      if (isTerminus) {
-        ctx.beginPath(); ctx.arc(st.x, st.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = line.col; ctx.fill();
-        ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = lw; ctx.stroke();
-      } else {
-        ctx.beginPath(); ctx.arc(st.x, st.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = '#131820'; ctx.fill();
-        ctx.strokeStyle = line.col; ctx.lineWidth = lw; ctx.stroke();
-      }
-
-      // Label: skip if too close to previous label on same y-row
-      const screenX = st.x * vp.scale + vp.x;
-      const rowKey  = Math.round(st.y / 4) * 4;  // bucket by 4px
-      const lastX   = labeledX[rowKey] ?? -9999;
-      const minGap  = isTerminus ? 0 : 50;
-      if (!isTerminus && (screenX - lastX) < minGap) return;
-      labeledX[rowKey] = screenX;
-
-      const fs = Math.max(7, (isTerminus ? 9.5 : 8) / vp.scale);
-      ctx.fillStyle = isTerminus ? line.col : '#6a7e96';
-      ctx.font = `${isTerminus ? '600 ' : ''}${fs}px -apple-system,sans-serif`;
-      ctx.textAlign = 'center';
-      // Labels above for 'up' lines, below for 'dn' lines
-      const above = (line.side === 'up');
-      ctx.textBaseline = above ? 'bottom' : 'top';
-      const lname = st.name.replace(/,?\s*[Pp]latform\s*\d+\s*$/,'').replace(/\s+[Ss]tation$/,'');
-      ctx.fillText(lname, st.x, above ? st.y - r - 3/vp.scale : st.y + r + 3/vp.scale);
-    });
   }
 
-  // ── Roma Street hub ────────────────────────────────────────────────────
+  // ── Station nodes ───────────────────────────────────────────────────────
+  // Count line usage per station
+  const usage={};
+  for(const ln of LINES)for(const s of ln.stops){usage[s]=(usage[s]||0)+1;}
+  // Termini
+  const term=new Set();
+  for(const ln of LINES){
+    const valid=ln.stops.filter(s=>px[s]);
+    if(valid.length){term.add(valid[0]);term.add(valid[valid.length-1]);}
+  }
+
+  // Sort all stations by screen x so label deduplication works left-to-right
+  const allStations = Object.entries(px)
+    .filter(([nm])=>nm!=='Roma Street')
+    .map(([nm,pos])=>({nm,pos,ny:N[nm]?.y??0}))
+    .sort((a,b)=>a.pos.x-b.pos.x);
+
+  // Track last label screen-x per row-slot × side
+  const lastLblX={};
+
+  for(const{nm,pos,ny} of allStations){
+    const isJ=(usage[nm]||0)>1, isT=term.has(nm);
+    const r=(isJ?SR+2:isT?SR+1:SR*0.65)/vp.scale;
+    const lw=1.8/vp.scale;
+    const col=LINES.find(l=>l.stops.includes(nm))?.col||'#888';
+
+    // Draw node
+    if(isJ){
+      ctx.save();ctx.translate(pos.x,pos.y);
+      ctx.beginPath();ctx.moveTo(0,-r*1.1);ctx.lineTo(r*1.1,0);ctx.lineTo(0,r*1.1);ctx.lineTo(-r*1.1,0);ctx.closePath();
+      ctx.fillStyle='#1e2d40';ctx.fill();ctx.strokeStyle='#c8d8ee';ctx.lineWidth=lw;ctx.stroke();
+      ctx.restore();
+    } else if(isT){
+      ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,Math.PI*2);
+      ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=lw;ctx.stroke();
+    } else {
+      ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,Math.PI*2);
+      ctx.fillStyle='#141c28';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.stroke();
+    }
+
+    // ── Label ──────────────────────────────────────────────────────────────
+    const scrX = pos.x*vp.scale + vp.x;
+    const scrY = pos.y*vp.scale + vp.y;
+    const important = isJ||isT;
+
+    // Zoom thresholds: junctions/termini show earlier than plain stops
+    if(important && vp.scale < 0.18) continue;
+    if(!important && vp.scale < 0.55) continue;
+
+    // Off-screen cull with margin
+    if(scrX < -80||scrX > canW+80||scrY < -40||scrY > canH+40) continue;
+
+    // Label side: branches above y=0 label above track; below label below; 
+    // main corridor (y=0) alternates: even station idx → above, odd → below
+    // We determine "even/odd" from x position relative to Roma St
+    const rowKey = Math.round(ny*4)/4;
+    let above;
+    if(ny < -0.1)     above=true;
+    else if(ny > 0.1) above=false;
+    else {
+      // Main corridor: alternate by x position bucket
+      const xBucket = Math.round(pos.x / (px['Central']?.x||40));
+      above = (xBucket%2===0);
+    }
+
+    const side = above?'a':'b';
+    const slotKey = rowKey+'_'+side;
+    const lastX = lastLblX[slotKey]??-9999;
+    // Require at least 52px screen gap between non-important, 24px for important
+    const minGap = important ? 24 : 52;
+    if(!important && (scrX-lastX)<minGap) continue;
+    lastLblX[slotKey] = scrX;
+
+    const fs = Math.max(7,(isJ?10.5:isT?9.5:8.5)/vp.scale);
+    ctx.fillStyle = isJ?'#c8d8ee':isT?col:'#5a7090';
+    ctx.font = `${important?'600 ':''}${fs}px -apple-system,sans-serif`;
+    ctx.textAlign='center';
+    ctx.textBaseline = above?'bottom':'top';
+    const lnm = nm.replace(/,?\s*[Pp]latform\s*\d+\s*$/,'').replace(/\s+[Ss]tation$/i,'');
+    ctx.fillText(lnm, pos.x, pos.y+(above?-1:1)*(r+3/vp.scale));
+  }
+
+  // ── Roma Street hub ─────────────────────────────────────────────────────
   {
-    const r = 12 / vp.scale;
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2);
-    ctx.fillStyle = '#1e2a3a'; ctx.fill();
-    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.5/vp.scale; ctx.stroke();
-    ctx.fillStyle = '#ffffff';
-    const fs = Math.max(7, 9/vp.scale);
-    ctx.font = `bold ${fs}px -apple-system,sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('Roma St', 0, 0);
+    const r=11/vp.scale,lw=2.5/vp.scale;
+    ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);
+    ctx.fillStyle='#1e2d40';ctx.fill();ctx.strokeStyle='#ffffff';ctx.lineWidth=lw;ctx.stroke();
+    if(vp.scale>0.22){
+      const fs=Math.max(7,9/vp.scale);
+      ctx.fillStyle='#ffffff';ctx.font=`bold ${fs}px -apple-system,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('Roma St',0,0);
+    }
   }
 
-  // ── Trains ────────────────────────────────────────────────────────────
-  for (const v of vehicles) {
-    const pos   = trainPos(v);
-    const col   = lc(v.route_id);
-    const sel   = selType === 'train' && selId === v.id;
-    const delay = v.delay_seconds || 0;
-    const TW    = (sel ? 36 : 28) / vp.scale;
-    const TH    = (sel ? 16 : 12) / vp.scale;
-    const rx    = 3 / vp.scale;
-    const { x, y } = pos;
-
-    // Glow
-    const gr = ctx.createRadialGradient(x,y,0,x,y,TH*2.5);
-    gr.addColorStop(0, col+'55'); gr.addColorStop(1,'transparent');
-    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x,y,TH*2.5,0,Math.PI*2); ctx.fill();
-
-    if (sel) {
-      const p = .35 + .35*Math.abs(Math.sin(Date.now()/350));
-      ctx.beginPath(); ctx.arc(x,y,TH*1.7,0,Math.PI*2);
-      ctx.strokeStyle=col; ctx.lineWidth=2/vp.scale; ctx.globalAlpha=p; ctx.stroke(); ctx.globalAlpha=1;
-    }
-
-    // Body
+  // ── Trains ────────────────────────────────────────────────────────────────
+  for(const v of vehicles){
+    const pos=trainPos(v),col=lc(v.route_id);
+    const sel=selType==='train'&&selId===v.id,delay=v.delay_seconds||0;
+    const TW=(sel?34:26)/vp.scale,TH=(sel?15:11)/vp.scale,rx=3/vp.scale;
+    const{x,y}=pos;
+    const gr=ctx.createRadialGradient(x,y,0,x,y,TH*2.5);
+    gr.addColorStop(0,col+'55');gr.addColorStop(1,'transparent');
+    ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y,TH*2.5,0,Math.PI*2);ctx.fill();
+    if(sel){const p=.35+.35*Math.abs(Math.sin(Date.now()/350));
+      ctx.beginPath();ctx.arc(x,y,TH*1.8,0,Math.PI*2);
+      ctx.strokeStyle=col;ctx.lineWidth=2/vp.scale;ctx.globalAlpha=p;ctx.stroke();ctx.globalAlpha=1;}
     ctx.beginPath();
-    ctx.moveTo(x-TW/2+rx,y-TH/2); ctx.lineTo(x+TW/2-rx,y-TH/2);
-    ctx.arcTo(x+TW/2,y-TH/2,x+TW/2,y-TH/2+rx,rx);
-    ctx.lineTo(x+TW/2,y+TH/2-rx); ctx.arcTo(x+TW/2,y+TH/2,x+TW/2-rx,y+TH/2,rx);
-    ctx.lineTo(x-TW/2+rx,y+TH/2); ctx.arcTo(x-TW/2,y+TH/2,x-TW/2,y+TH/2-rx,rx);
-    ctx.lineTo(x-TW/2,y-TH/2+rx); ctx.arcTo(x-TW/2,y-TH/2,x-TW/2+rx,y-TH/2,rx);
-    ctx.closePath();
-    ctx.fillStyle=col; ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,.65)'; ctx.lineWidth=1.5/vp.scale; ctx.stroke();
+    ctx.moveTo(x-TW/2+rx,y-TH/2);ctx.lineTo(x+TW/2-rx,y-TH/2);
+    ctx.arcTo(x+TW/2,y-TH/2,x+TW/2,y-TH/2+rx,rx);ctx.lineTo(x+TW/2,y+TH/2-rx);
+    ctx.arcTo(x+TW/2,y+TH/2,x+TW/2-rx,y+TH/2,rx);ctx.lineTo(x-TW/2+rx,y+TH/2);
+    ctx.arcTo(x-TW/2,y+TH/2,x-TW/2,y+TH/2-rx,rx);ctx.lineTo(x-TW/2,y-TH/2+rx);
+    ctx.arcTo(x-TW/2,y-TH/2,x-TW/2+rx,y-TH/2,rx);ctx.closePath();
+    ctx.fillStyle=col;ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.65)';ctx.lineWidth=1.5/vp.scale;ctx.stroke();
     if(sel){ctx.strokeStyle='#fff';ctx.lineWidth=2/vp.scale;ctx.stroke();}
-
-    // Highlight
-    ctx.beginPath(); ctx.rect(x-TW/2+rx,y-TH/2,TW-rx*2,TH/3);
-    ctx.fillStyle='rgba(255,255,255,.18)'; ctx.fill();
-    // Cab
+    ctx.beginPath();ctx.rect(x-TW/2+rx,y-TH/2,TW-rx*2,TH/3);
+    ctx.fillStyle='rgba(255,255,255,.18)';ctx.fill();
     ctx.fillStyle='rgba(180,220,255,.4)';
-    ctx.fillRect(x+TW/2-6/vp.scale,y-TH/2+2/vp.scale,3.5/vp.scale,TH-4/vp.scale);
-    // Late
-    if(delay>60){ctx.fillStyle='#aa1111';ctx.fillRect(x-TW/2,y-TH/2,5/vp.scale,TH);}
-
-    const fs = Math.max(6,(sel?10:8)/vp.scale);
-    ctx.fillStyle='rgba(255,255,255,.92)';
-    ctx.font=`bold ${fs}px -apple-system,sans-serif`;
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText((v.route_id||'').slice(0,3), x-1/vp.scale, y+.5/vp.scale);
-    if(delay>60){
-      ctx.fillStyle='#ff6666';
-      ctx.font=`bold ${Math.max(6,7/vp.scale)}px -apple-system,sans-serif`;
-      ctx.textAlign='center'; ctx.textBaseline='bottom';
-      ctx.fillText(`+${Math.round(delay/60)}m`,x,y-TH/2-2/vp.scale);
-    }
+    ctx.fillRect(x+TW/2-5/vp.scale,y-TH/2+1.5/vp.scale,3/vp.scale,TH-3/vp.scale);
+    if(delay>60){ctx.fillStyle='#aa1111';ctx.fillRect(x-TW/2,y-TH/2,4/vp.scale,TH);}
+    const fs=Math.max(6,(sel?9:7)/vp.scale);
+    ctx.fillStyle='rgba(255,255,255,.92)';ctx.font=`bold ${fs}px -apple-system,sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText((v.route_id||'').slice(0,3),x,y+.5/vp.scale);
+    if(delay>60){ctx.fillStyle='#ff6666';ctx.font=`bold ${Math.max(6,6/vp.scale)}px -apple-system,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='bottom';
+      ctx.fillText(`+${Math.round(delay/60)}m`,x,y-TH/2-2/vp.scale);}
   }
-
   ctx.restore();
 }
 
 // ── Interaction ───────────────────────────────────────────────────────────────
-let dragging=false, dragS={}, vpS={};
-let selId=null, selType=null, vehicles=[];
-
-function hitTest(cx, cy) {
-  const tr = 16/vp.scale;
-  for (const v of vehicles) { const p=trainPos(v); if(Math.hypot(cx-p.x,cy-p.y)<tr) return{t:'train',v}; }
-  const sr = 12/vp.scale;
-  for (const row of layout)
-    for (const st of row.stops)
-      if (Math.hypot(cx-st.x,cy-st.y) < sr) return {t:'station', n:st.name};
-  // Roma Street
-  if (Math.hypot(cx,cy) < 16/vp.scale) return {t:'station', n:'Roma Street'};
+let dragging=false,dragS={},vpS={},selId=null,selType=null,vehicles=[];
+function hitTest(cx,cy){
+  const tr=14/vp.scale;
+  for(const v of vehicles){const p=trainPos(v);if(Math.hypot(cx-p.x,cy-p.y)<tr)return{t:'train',v};}
+  const sr=10/vp.scale;
+  for(const[nm,pos] of Object.entries(px))if(Math.hypot(cx-pos.x,cy-pos.y)<sr)return{t:'station',n:nm};
   return null;
 }
-function handleHit(h) {
-  if (h.t==='train') {
-    if(selId===h.v.id&&selType==='train'){clearD();return;}
-    selId=h.v.id;selType='train';renderList();showTrain(h.v);
-  } else {
-    selId=h.n;selType='station';renderList();showStation(h.n);
-  }
+function handleHit(h){
+  if(h.t==='train'){if(selId===h.v.id&&selType==='train'){clearD();return;}selId=h.v.id;selType='train';renderList();showTrain(h.v);}
+  else{selId=h.n;selType='station';renderList();showStation(h.n);}
 }
-
-const sch = document.getElementById('sch');
-sch.addEventListener('mousedown', e => {
-  const[cx,cy]=toContent(e.offsetX,e.offsetY);
-  const h=hitTest(cx,cy); if(h){handleHit(h);return;}
-  dragging=true; dragS={x:e.clientX,y:e.clientY}; vpS={x:vp.x,y:vp.y};
-});
-sch.addEventListener('mousemove', e => {
-  if(!dragging)return; vp.x=vpS.x+(e.clientX-dragS.x); vp.y=vpS.y+(e.clientY-dragS.y); draw();
-});
-sch.addEventListener('mouseup',   ()=>{ dragging=false; });
-sch.addEventListener('mouseleave',()=>{ dragging=false; });
-sch.addEventListener('wheel', e => {
-  e.preventDefault(); zoom(e.deltaY<0?1.12:.89, e.offsetX, e.offsetY);
-}, {passive:false});
+const sch=document.getElementById('sch');
+sch.addEventListener('mousedown',e=>{const[cx,cy]=toContent(e.offsetX,e.offsetY);const h=hitTest(cx,cy);if(h){handleHit(h);return;}dragging=true;dragS={x:e.clientX,y:e.clientY};vpS={x:vp.x,y:vp.y};});
+sch.addEventListener('mousemove',e=>{if(!dragging)return;vp.x=vpS.x+(e.clientX-dragS.x);vp.y=vpS.y+(e.clientY-dragS.y);draw();});
+sch.addEventListener('mouseup',()=>{dragging=false;});
+sch.addEventListener('mouseleave',()=>{dragging=false;});
+sch.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.12:.89,e.offsetX,e.offsetY);},{passive:false});
 
 // ── Panels ────────────────────────────────────────────────────────────────────
-function clearD(){ selId=null;selType=null;document.getElementById('nosel').style.display='flex';document.getElementById('selc').style.display='none'; }
-function openD(){  document.getElementById('nosel').style.display='none'; document.getElementById('selc').style.display='flex'; }
-function mkrows(a){ return a.map(([l,v,c])=>`<div class="ir"><span class="lb">${l}</span><span class="vl ${c||''}" title="${v}">${v}</span></div>`).join(''); }
-
-function showTrain(v) {
+function clearD(){selId=null;selType=null;document.getElementById('nosel').style.display='flex';document.getElementById('selc').style.display='none';}
+function openD(){document.getElementById('nosel').style.display='none';document.getElementById('selc').style.display='flex';}
+function mkrows(a){return a.map(([l,v,c])=>`<div class="ir"><span class="lb">${l}</span><span class="vl ${c||''}">${v}</span></div>`).join('');}
+function showTrain(v){
   openD();
-  const d=v.delay_seconds||0;
-  const ds=d===0?'On Time':d>0?`+${Math.round(d/60)}m late`:`${Math.round(d/60)}m early`;
-  const dc=d>60?'warn':d<-30?'info':'ok';
-  const dirs=['N','NE','E','SE','S','SW','W','NW'];
-  const hd=v.bearing?dirs[Math.round(v.bearing/45)%8]+` ${Math.round(v.bearing)}°`:'—';
+  const d=v.delay_seconds||0,ds=d===0?'On Time':d>0?`+${Math.round(d/60)}m late`:`${Math.round(d/60)}m early`,dc=d>60?'warn':d<-30?'info':'ok';
+  const dirs=['N','NE','E','SE','S','SW','W','NW'],hd=v.bearing?dirs[Math.round(v.bearing/45)%8]+` ${Math.round(v.bearing)}°`:'—';
   const st=v.current_stop_name?(v.current_status==='STOPPED_AT'?'At ':'To ')+v.current_stop_name:v.current_status?.replace(/_/g,' ')||'—';
-  document.getElementById('sel-hdr').innerHTML=`
-    <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">
-      <div style="width:12px;height:12px;border-radius:2px;background:${lc(v.route_id)};flex-shrink:0"></div>
-      <div style="font-weight:700;font-size:12px;color:var(--wh)">${v.route_id||'—'} → ${v.headsign||'—'}</div>
-    </div>${mkrows([['Train',v.label||v.id,''],['Status',st,''],['Delay',ds,dc],['Speed',v.speed?v.speed+' km/h':'—',''],['Heading',hd,'']])}`;
-  const td=d, stops=v.next_stops||[];
-  document.getElementById('sel-body').innerHTML=`<div class="itl">Next Stops</div>
-    ${stops.length?stops.map((s,i)=>{
-      const raw=s.stop_name||s.stop_id;
-      const nm=raw.replace(/,\s*[Pp]latform\s*\d+\s*$/,'').replace(/\s+[Ss]tation$/,'');
-      const d2=s.arrival_delay;
-      let ds2='';
-      if(d2!=null){if(Math.abs(d2)<60)ds2='On time';else if(Math.abs(d2-td)>=60)ds2=d2>0?`+${Math.round(d2/60)}m`:`${Math.round(d2/60)}m`;}
-      return`<div class="sr"><div class="sn">${i+1}</div><div class="sm">${nm}</div><div class="sd ${d2>60?'late':'ok'}">${ds2}</div></div>`;
-    }).join(''):'<div style="color:var(--dm);font-size:10px">No stop data</div>'}`;
+  document.getElementById('sel-hdr').innerHTML=`<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="width:12px;height:12px;border-radius:2px;background:${lc(v.route_id)};flex-shrink:0"></div><div style="font-weight:700;font-size:12px;color:var(--wh)">${v.route_id||'—'} → ${v.headsign||'—'}</div></div>${mkrows([['Train',v.label||v.id,''],['Status',st,''],['Delay',ds,dc],['Speed',v.speed?v.speed+' km/h':'—',''],['Heading',hd,'']])}`;
+  const td=d,stops=v.next_stops||[];
+  document.getElementById('sel-body').innerHTML=`<div class="itl">Next Stops</div>${stops.length?stops.map((s,i)=>{
+    const nm=(s.stop_name||s.stop_id).replace(/,\s*[Pp]latform\s*\d+\s*$/,'').replace(/\s+[Ss]tation$/,'');
+    const d2=s.arrival_delay;let ds2='';
+    if(d2!=null){if(Math.abs(d2)<60)ds2='On time';else if(Math.abs(d2-td)>=60)ds2=d2>0?`+${Math.round(d2/60)}m`:`${Math.round(d2/60)}m`;}
+    return`<div class="sr"><div class="sn">${i+1}</div><div class="sm">${nm}</div><div class="sd ${d2>60?'late':'ok'}">${ds2}</div></div>`;
+  }).join(''):'<div style="color:var(--dm);font-size:10px">No stop data</div>'}`;
 }
-
-function minsUntil(t){ if(!t)return''; const m=Math.round((t-Date.now()/1000)/60); return m<=0?'Now':m===1?'1 min':`${m} mins`; }
-
-function showStation(name) {
+function minsUntil(t){if(!t)return'';const m=Math.round((t-Date.now()/1000)/60);return m<=0?'Now':m===1?'1 min':`${m} mins`;}
+function showStation(name){
   openD();
   document.getElementById('sel-hdr').innerHTML=`<div class="itl">Station</div><div style="font-weight:700;font-size:12px;color:var(--wh)">${name}</div>`;
-  const nn=s=>s.toLowerCase().replace(/,?\s*platform\s*\d+\s*$/i,'').replace(/\s+station$/i,'').trim();
-  const ns=nn(name);
-  const arr=[];
-  for(const v of vehicles){
-    for(const s of v.next_stops||[]){
-      const sn=nn(s.stop_name||'');
-      if(sn===ns||sn.startsWith(ns.split(' ')[0])||ns.startsWith(sn.split(' ')[0])){
-        const delay=s.arrival_delay||0;
-        arr.push({vid:v.id,route_id:v.route_id,headsign:v.headsign||v.label,delay,arr_time:(s.arrival_time||0)+delay,col:lc(v.route_id)});
-      }
+  const nn=s=>s.toLowerCase().replace(/,?\s*platform\s*\d+\s*$/i,'').replace(/\s+station$/i,'').trim(),ns=nn(name),arr=[];
+  for(const v of vehicles)for(const s of v.next_stops||[]){
+    const sn=nn(s.stop_name||'');
+    if(sn===ns||sn.startsWith(ns.split(' ')[0])||ns.startsWith(sn.split(' ')[0])){
+      const delay=s.arrival_delay||0;
+      arr.push({vid:v.id,route_id:v.route_id,headsign:v.headsign||v.label,delay,arr_time:(s.arrival_time||0)+delay,col:lc(v.route_id)});
     }
   }
   arr.sort((a,b)=>(a.arr_time||0)-(b.arr_time||0));
   const ft=t=>t?new Date(t*1000).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:false}):'';
-  document.getElementById('sel-body').innerHTML=`<div class="itl">Next Arrivals — click to track</div>
-    ${arr.length?arr.slice(0,8).map(a=>{
-      const mins=minsUntil(a.arr_time);
-      const ds=a.delay===0?'On time':a.delay>0?`+${Math.round(a.delay/60)}m late`:`${Math.abs(Math.round(a.delay/60))}m early`;
-      return`<div class="ar" onclick="selectTrain('${a.vid}')">
-        <div class="ab" style="background:${a.col}">${(a.route_id||'').slice(0,3)}</div>
-        <div class="ad">${a.headsign||'—'}</div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0">
-          <div style="color:${mins==='Now'?'#ff8844':'var(--wh)'};font-weight:600;font-size:11px">${mins}</div>
-          <div class="at">${ft(a.arr_time)}</div>
-          <div class="adl ${a.delay>60?'late':'ok'}">${ds}</div>
-        </div>
-      </div>`;
-    }).join(''):'<div style="color:var(--dm);font-size:10px">No arrivals found</div>'}`;
+  document.getElementById('sel-body').innerHTML=`<div class="itl">Next Arrivals — click to track</div>${arr.length?arr.slice(0,8).map(a=>{
+    const mins=minsUntil(a.arr_time),ds=a.delay===0?'On time':a.delay>0?`+${Math.round(a.delay/60)}m late`:`${Math.abs(Math.round(a.delay/60))}m early`;
+    return`<div class="ar" onclick="selectTrain('${a.vid}')"><div class="ab" style="background:${a.col}">${(a.route_id||'').slice(0,3)}</div><div class="ad">${a.headsign||'—'}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0"><div style="color:${mins==='Now'?'#ff8844':'var(--wh)'};font-weight:600;font-size:11px">${mins}</div><div class="at">${ft(a.arr_time)}</div><div class="adl ${a.delay>60?'late':'ok'}">${ds}</div></div></div>`;
+  }).join(''):'<div style="color:var(--dm);font-size:10px">No arrivals found</div>'}`;
 }
-
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-function renderList() {
+function renderList(){
   const q=document.getElementById('sbq').value.toLowerCase();
-  const s=[...vehicles].filter(v=>!q||v.route_id?.toLowerCase().includes(q)||v.label?.toLowerCase().includes(q)||v.headsign?.toLowerCase().includes(q)).sort((a,b)=>(b.delay_seconds||0)-(a.delay_seconds||0));
-  const dc=d=>d>60?'late':d<-30?'early':'ok';
-  const dl=d=>d>60?`+${Math.round(d/60)}m`:d<-30?`${Math.round(d/60)}m`:'On time';
-  document.getElementById('tlist').innerHTML=s.length
-    ?s.map(v=>{
-        const d=v.delay_seconds||0;const sel=selType==='train'&&selId===v.id;
-        return`<div class="en ${sel?'sel':''}" onclick="selectTrain('${v.id}')">
-          <div class="et"><div class="er"><div class="rd" style="background:${lc(v.route_id)}"></div>${v.route_id||'—'}</div><div class="dtg ${dc(d)}">${dl(d)}</div></div>
-          <div class="ed">${v.headsign?'→ '+v.headsign:v.label||'—'}</div>
-          <div class="em">${v.speed?v.speed+'km/h':''} ${v.current_stop_name?.slice(0,14)||''}</div>
-        </div>`;}).join('')
-    :`<div style="color:var(--dm);padding:14px;text-align:center;font-size:10px">No trains</div>`;
+  const s=[...vehicles].filter(v=>!q||v.route_id?.toLowerCase().includes(q)||v.headsign?.toLowerCase().includes(q)).sort((a,b)=>(b.delay_seconds||0)-(a.delay_seconds||0));
+  const dc=d=>d>60?'late':d<-30?'early':'ok',dl=d=>d>60?`+${Math.round(d/60)}m`:d<-30?`${Math.round(d/60)}m`:'On time';
+  document.getElementById('tlist').innerHTML=s.length?s.map(v=>{
+    const d=v.delay_seconds||0,sel=selType==='train'&&selId===v.id,bc=lc(v.route_id);
+    return`<div class="en ${sel?'sel':''}" onclick="selectTrain('${v.id}')"><div class="et"><div><span class="rb" style="background:${bc}">${(v.route_id||'').slice(0,6)}</span></div><div class="dtg ${dc(d)}">${dl(d)}</div></div><div class="ed">${v.headsign||v.label||'—'}</div><div class="em">${v.current_stop_name?'→ '+v.current_stop_name.slice(0,18):(v.speed?v.speed+'km/h':'')}</div></div>`;
+  }).join(''):`<div style="color:var(--dm);padding:14px;text-align:center;font-size:10px">No trains</div>`;
 }
-function selectTrain(id) {
-  const v=vehicles.find(x=>x.id===id); if(!v)return;
-  if(selId===id&&selType==='train'){clearD();return;}
-  selId=id;selType='train';renderList();showTrain(v);
-}
-
-// ── Data ──────────────────────────────────────────────────────────────────────
+function selectTrain(id){const v=vehicles.find(x=>x.id===id);if(!v)return;if(selId===id&&selType==='train'){clearD();return;}selId=id;selType='train';renderList();showTrain(v);}
 async function refresh(){
   try{
-    const r=await fetch('/api/vehicles'), d=await r.json();
-    vehicles=d.vehicles||[];
+    const r=await fetch(BASE+'/api/vehicles'),d=await r.json();vehicles=d.vehicles||[];
     const late=vehicles.filter(v=>(v.delay_seconds||0)>60).length;
-    document.getElementById('hcount').textContent=d.count||0;
-    document.getElementById('hlate').textContent=late;
+    document.getElementById('hcount').textContent=d.count||0;document.getElementById('hlate').textContent=late;
     document.getElementById('sbcount').textContent=d.count||0;
     const age=d.last_updated?Math.round(Date.now()/1000-d.last_updated):null;
     document.getElementById('hupdated').textContent=age!=null?`${age}s ago`:'—';
-    renderList();
-    if(selType==='train'&&selId){const v=vehicles.find(x=>x.id===selId);if(v)showTrain(v);else clearD();}
+    renderList();if(selType==='train'&&selId){const v=vehicles.find(x=>x.id===selId);if(v)showTrain(v);else clearD();}
   }catch{document.getElementById('sled').classList.add('red');}
 }
-
-// ── Boot ──────────────────────────────────────────────────────────────────────
-setInterval(()=>{
-  const n=new Date();
-  document.getElementById('clock').textContent=n.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-},1000);
-function animLoop(){ draw(); requestAnimationFrame(animLoop); }
+setInterval(()=>{const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});},1000);
+function animLoop(){draw();requestAnimationFrame(animLoop);}
 function resize(){
-  const c=document.getElementById('sch'), w=document.getElementById('cwrap');
-  c.width=w.clientWidth; c.height=w.clientHeight;
-  canW=c.width; canH=c.height;
-  buildLayout(canW, canH);
-  centreView();
-  draw();
+  const c=document.getElementById('sch'),w=document.getElementById('cwrap');
+  c.width=w.clientWidth;c.height=w.clientHeight;canW=c.width;canH=c.height;
+  buildLayout(canW,canH);centreView();draw();
 }
-window.addEventListener('resize', resize);
-loadColours();
-resize();
-refresh().then(()=>animLoop());
-setInterval(refresh, 15000);
+window.addEventListener('resize',resize);
+loadColours();resize();refresh().then(()=>animLoop());setInterval(refresh,15000);
 </script>
 </body>
 </html>

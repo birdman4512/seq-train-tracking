@@ -1,0 +1,4 @@
+##Git Ignore File
+
+# Ignore log files and logs directory
+logs/

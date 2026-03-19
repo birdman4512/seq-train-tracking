@@ -13,7 +13,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
-      - logs:/logs          # backend writes logs here
+      - ./logs:/logs          # backend writes logs to host folder
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/status"]
       interval: 30s
@@ -32,16 +32,12 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - logs:/var/log/traintracker:ro   # frontend can serve log reads too (read-only)
+      - ./logs:/var/log/traintracker:ro   # frontend reads logs from host folder
     depends_on:
       backend:
         condition: service_healthy
     networks:
       - trainnet
-
-volumes:
-  logs:
-    driver: local
 
 networks:
   trainnet:

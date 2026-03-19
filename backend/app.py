@@ -102,6 +102,33 @@ ROUTE_COLOUR_KEYWORDS = [
 
 _unknown_routes_logged = set()
 
+# Human-readable line names keyed by the 2-letter prefix in route_id (e.g. SHBR-4727 → 'SH')
+LINE_NAMES = {
+    'SH': 'Shorncliffe',
+    'SP': 'Springfield',
+    'VL': 'Gold Coast',
+    'RW': 'Ipswich / Rosewood',
+    'FG': 'Ferny Grove',
+    'DO': 'Doomben',
+    'AP': 'Airport',
+    'CL': 'Cleveland',
+    'BE': 'Beenleigh',
+    'CA': 'Caboolture',
+    'NA': 'Nambour / Sunshine Coast',
+    'KP': 'Kippa-Ring',
+    'IP': 'Ipswich',
+    'RP': 'Redcliffe Peninsula',
+    'GL': 'Gold Coast',
+    'IM': 'Inner Metro',
+}
+
+def route_line_name(route_id):
+    """Return a friendly line name for a route_id like SHBR-4727."""
+    if not route_id:
+        return ''
+    prefix = route_id[:2].upper()
+    return LINE_NAMES.get(prefix, '')
+
 def route_colour(route_id, route_name=''):
     combined = (str(route_id) + ' ' + str(route_name)).upper()
     for keyword, col in ROUTE_COLOUR_KEYWORDS:
@@ -511,6 +538,7 @@ def api_vehicles():
 
         v["delay_seconds"] = delay
         v["next_stops"]    = upcoming[:5]
+        v["line_name"]     = route_line_name(v.get("route_id", ""))
     return jsonify({
         "vehicles":      vehicles,
         "count":         len(vehicles),

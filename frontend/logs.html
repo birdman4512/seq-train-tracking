@@ -62,10 +62,20 @@
     return 'line-INFO';
   }
 
-  const BASE='';
+  // API_BASE: works at root, subfolders, with or without trailing slash
+// Treats the current page URL as a folder (even if no trailing slash)
+// so fetch(API_BASE+'/vehicles') always resolves correctly.
+const API_BASE = (()=>{
+  let path = location.pathname;
+  // If path has no trailing slash and no file extension, treat it as a directory
+  if (!path.endsWith('/') && !path.split('/').pop().includes('.')) path += '/';
+  // Get directory portion
+  const dir = path.substring(0, path.lastIndexOf('/') + 1);
+  return location.origin + dir + 'api';
+})();
 async function fetchLogs() {
     try {
-      const r = await fetch('api/logs');
+      const r = await fetch(API_BASE+'/logs');
       const d = await r.json();
       if (d.error) {
         document.getElementById('log-container').textContent = 'Error: ' + d.error;

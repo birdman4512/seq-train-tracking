@@ -93,9 +93,18 @@ header{height:40px;background:#10141a;border-bottom:1px solid #1e2738;display:fl
 // ─────────────────────────────────────────────────────────────────────────────
 // BASE URL — works at root or any subfolder
 // ─────────────────────────────────────────────────────────────────────────────
-// Relative URLs - work at root or any subfolder
-const BASE = '';
-document.getElementById('mapbtn').onclick = () => location.href = './';
+// API_BASE: works at root, subfolders, with or without trailing slash
+// Treats the current page URL as a folder (even if no trailing slash)
+// so fetch(API_BASE+'/vehicles') always resolves correctly.
+const API_BASE = (()=>{
+  let path = location.pathname;
+  // If path has no trailing slash and no file extension, treat it as a directory
+  if (!path.endsWith('/') && !path.split('/').pop().includes('.')) path += '/';
+  // Get directory portion
+  const dir = path.substring(0, path.lastIndexOf('/') + 1);
+  return location.origin + dir + 'api';
+})();
+document.getElementById('mapbtn').onclick = () => location.href = API_BASE.replace(/\/api$/, '/');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COLOURS
@@ -118,7 +127,7 @@ function lc(rid){
 async function loadColours(){
   const retry=async()=>{
     try{
-      const[r1,r2]=await Promise.all([fetch('api/debug/routes'),fetch('api/debug/live')]);
+      const[r1,r2]=await Promise.all([fetch(API_BASE+'/debug/routes'),fetch(API_BASE+'/debug/live')]);
       const[d1,d2]=await Promise.all([r1.json(),r2.json()]);
       let n=0;
       for(const rt of(d1.gtfs_routes||[])){const c=rt.gtfs_color||rt.computed_colour;if(c&&c!=='#5bb8ff'){RMAP[rt.route_id]=c;n++;}}
@@ -730,7 +739,7 @@ function selectTrain(id){const v=vehicles.find(x=>x.id===id);if(!v)return;if(sel
 // ─────────────────────────────────────────────────────────────────────────────
 async function refresh(){
   try{
-    const r=await fetch('api/vehicles'),d=await r.json();
+    const r=await fetch(API_BASE+'/vehicles'),d=await r.json();
     vehicles=d.vehicles||[];
     const late=vehicles.filter(v=>(v.delay_seconds||0)>60).length;
     document.getElementById('hcount').textContent=d.count||0;

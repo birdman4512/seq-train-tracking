@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Queensland Live Train Tracker</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0e1a;
+      color: #e0e6f0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1a2e45 100%);
+      border-bottom: 1px solid #1e3a5a;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+      z-index: 1000;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #e63946, #c1121f);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+    }
+    h1 span { color: #e63946; }
+
+    .subtitle { font-size: 0.72rem; color: #7a9ab8; }
+
+    .header-stats {
+      margin-left: auto;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .stat-pill {
+      background: #0d1b2a;
+      border: 1px solid #1e3a5a;
+      border-radius: 20px;
+      padding: 5px 14px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+    }
+
+    .stat-pill .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 2s infinite;
+    }
+
+    .stat-pill.error .dot { background: #e63946; animation: none; }
+    .stat-pill.stale .dot { background: #f59e0b; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+    }
+
+    .btn {
+      background: #1e3a5a;
+      border: 1px solid #2d5a8a;
+      border-radius: 6px;
+      color: #e0e6f0;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #2d5a8a; }
+    .btn.active { background: #e63946; border-color: #e63946; }
+
+    /* ── Main layout ── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 320px;
+      background: #0d1b2a;
+      border-right: 1px solid #1e3a5a;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .sidebar-tabs {
+      display: flex;
+      border-bottom: 1px solid #1e3a5a;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-size: 0.75rem;
+      cursor: pointer;
+      color: #7a9ab8;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab.active { color: #e63946; border-bottom-color: #e63946; }
+
+    .tab-content { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .tab-content.active { display: flex; }
+
+    .train-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px;
+    }
+
+    .train-card {
+      background: #111e30;
+      border: 1px solid #1e3a5a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .train-card:hover { border-color: #3d7ab8; background: #162436; }
+    .train-card.selected { border-color: #e63946; background: #1a1015; }
+
+    .train-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .route-badge {
+      background: #e63946;
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .delay-badge {
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .delay-on-time  { background: #14532d; color: #4ade80; }
+    .delay-late     { background: #7f1d1d; color: #fca5a5; }
+    .delay-early    { background: #1e3a8a; color: #93c5fd; }
+
+    .train-info { font-size: 0.72rem; color: #7a9ab8; }
+    .train-info strong { color: #c0d0e0; }
+
+    .speed-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      margin-top: 4px;
+    }
+
+    .speed-bar-bg {
+      flex: 1; height: 4px;
+      background: #1e3a5a;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .speed-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #e63946);
+      border-radius: 2px;
+      transition: width 0.5s;
+    }
+
+    /* Alerts tab */
+    .alerts-list { overflow-y: auto; flex: 1; padding: 8px; }
+
+    .alert-card {
+      background: #1a1010;
+      border: 1px solid #5c2020;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+    }
+
+    .alert-header {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #fca5a5;
+      margin-bottom: 4px;
+    }
+
+    .alert-desc { font-size: 0.7rem; color: #c08080; line-height: 1.4; }
+
+    .alert-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+
+    .alert-tag {
+      background: #3d1010;
+      border: 1px solid #5c2020;
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-size: 0.65rem;
+      color: #f08080;
+    }
+
+    .no-data {
+      text-align: center;
+      color: #4a6a8a;
+      padding: 30px 20px;
+      font-size: 0.8rem;
+    }
+
+    /* Search */
+    .search-box {
+      padding: 8px;
+      border-bottom: 1px solid #1e3a5a;
+    }
+
+    .search-box input {
+      width: 100%;
+      background: #111e30;
+      border: 1px solid #1e3a5a;
+      border-radius: 6px;
+      color: #e0e6f0;
+      padding: 7px 12px;
+      font-size: 0.78rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-box input:focus { border-color: #3d7ab8; }
+    .search-box input::placeholder { color: #4a6a8a; }
+
+    /* ── Map ── */
+    #map {
+      flex: 1;
+      background: #0a0e1a;
+    }
+
+    /* ── Info panel ── */
+    #info-panel {
+      position: absolute;
+      bottom: 30px;
+      right: 20px;
+      width: 280px;
+      background: rgba(13,27,42,0.95);
+      border: 1px solid #1e3a5a;
+      border-radius: 12px;
+      padding: 14px;
+      z-index: 999;
+      display: none;
+      backdrop-filter: blur(10px);
+    }
+
+    #info-panel.visible { display: block; }
+
+    #info-panel h3 { font-size: 0.9rem; color: #fff; margin-bottom: 10px; }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      padding: 4px 0;
+      border-bottom: 1px solid #1e3a5a;
+    }
+    .info-row:last-child { border: none; }
+    .info-row .label { color: #7a9ab8; }
+    .info-row .value { color: #e0e6f0; font-weight: 500; }
+
+    #info-panel .close-btn {
+      position: absolute;
+      top: 8px; right: 10px;
+      background: none; border: none;
+      color: #7a9ab8; cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      top: 70px; right: 20px;
+      background: #1e3a5a;
+      border: 1px solid #2d5a8a;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.78rem;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+
+    /* Leaflet dark overrides */
+    .leaflet-container { background: #0e1826 !important; }
+    .station-popup .leaflet-popup-content-wrapper { background: #161a20; border: 1px solid #252d3a; border-radius: 8px; padding: 0; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+    .station-popup .leaflet-popup-content { margin: 0; }
+    .station-popup .leaflet-popup-tip { background: #161a20; }
+    .station-popup .leaflet-popup-close-button { color: #4a5568 !important; top: 6px !important; right: 8px !important; }
+    .leaflet-tile { filter: brightness(0.35) saturate(0.3) hue-rotate(195deg); }
+
+    /* Custom train marker */
+    /* SVG-based marker — no CSS transform conflicts */
+    .train-marker-svg { cursor: pointer; overflow: visible; display: block; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0a0e1a; }
+    ::-webkit-scrollbar-thumb { background: #1e3a5a; border-radius: 3px; }
+
+    /* Loading overlay */
+    #loading {
+      position: fixed; inset: 0;
+      background: #0a0e1a;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 99999;
+      transition: opacity 0.5s;
+    }
+    #loading.fade { opacity: 0; pointer-events: none; }
+
+    .loader-train {
+      font-size: 3rem;
+      animation: chug 1s steps(2) infinite;
+    }
+    @keyframes chug {
+      0%  { transform: translateX(-5px); }
+      50% { transform: translateX( 5px); }
+      100%{ transform: translateX(-5px); }
+    }
+
+    .loader-text {
+      margin-top: 16px;
+      color: #7a9ab8;
+      font-size: 0.9rem;
+    }
+
+    .loader-bar {
+      width: 200px; height: 3px;
+      background: #1e3a5a;
+      border-radius: 2px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    .loader-bar-fill {
+      height: 100%;
+      background: #e63946;
+      border-radius: 2px;
+      animation: load 2s ease-in-out infinite;
+    }
+    @keyframes load {
+      0%  { width: 0%; }
+      100%{ width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loading">
+  <div class="loader-train">🚆</div>
+  <div class="loader-text">Connecting to Queensland Translink feeds…</div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🚆</div>
+    <div>
+      <h1>Queensland <span>Live Train Tracker</span></h1>
+      <div class="subtitle">Translink SEQ Rail · GTFS-RT · Open Data</div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-pill" id="status-pill">
+      <div class="dot"></div>
+      <span id="vehicle-count">—</span> trains
+    </div>
+    <div class="stat-pill" id="update-pill">
+      <span id="last-updated">Connecting…</span>
+    </div>
+    <button class="btn" id="toggle-labels-btn" onclick="toggleLabels()">Labels</button>
+    <button class="btn active" id="auto-refresh-btn" onclick="toggleAutoRefresh()">Live ●</button>
+    <div style="width:1px;height:20px;background:#1e3a5a;margin:0 4px"></div>
+    <button class="btn active" onclick="">🗺 Map</button>
+    <button class="btn" onclick="window.location.href='/control.html'">🖥 Control</button>
+  </div>
+</header>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-tabs">
+      <div class="tab active" onclick="switchTab('trains')">🚆 Trains</div>
+      <div class="tab" onclick="switchTab('alerts')">⚠️ Alerts</div>
+    </div>
+
+    <!-- Trains tab -->
+    <div class="tab-content active" id="tab-trains">
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search route or train ID…" oninput="filterTrains()" />
+      </div>
+      <div class="train-list" id="train-list">
+        <div class="no-data">Loading train data…</div>
+      </div>
+    </div>
+
+    <!-- Alerts tab -->
+    <div class="tab-content" id="tab-alerts">
+      <div class="alerts-list" id="alerts-list">
+        <div class="no-data">Loading alerts…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div id="map"></div>
+</div>
+
+<!-- Info Panel (floating, bottom-right) -->
+<div id="info-panel">
+  <button class="close-btn" onclick="closeInfoPanel()">✕</button>
+  <h3 id="info-title">Train Detail</h3>
+  <div id="info-content"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────────────
+// All API calls go through the nginx proxy on the same origin.
+// The backend is only reachable on the internal Docker network (never exposed to the host).
+const API_BASE = '';
+
+const REFRESH_MS   = 15000;  // match backend poll interval
+const SEQ_CENTRE   = [-27.47, 153.02]; // Brisbane
+
+// ── State ────────────────────────────────────────────────────────────────────
+let map, markersLayer, routeLayer, shapesLayer, stationsLayer;
+let shapesLoaded = false;
+let vehicles        = [];
+let selectedId      = null;
+let showLabels      = false;
+let autoRefresh     = true;
+let refreshTimer    = null;
+let markerObjects   = {};
+let stationsLoaded  = false;
+
+// Smooth position interpolation — trains glide to new positions
+// animPos[id] = {lat, lon}  (current rendered position, lerped toward target)
+const animPos  = {};
+const LERP_SPEED = 0.08; // fraction of distance to close per frame (~15fps)
+let   animFrame = null;
+
+function startAnimLoop() {
+  if (animFrame) return; // already running
+  function tick() {
+    let anyMoving = false;
+    for (const v of vehicles) {
+      const target = {lat: v.lat, lon: v.lon};
+      if (!animPos[v.id]) {
+        animPos[v.id] = {...target};
+        continue;
+      }
+      const cur = animPos[v.id];
+      const dLat = target.lat - cur.lat;
+      const dLon = target.lon - cur.lon;
+      const dist  = Math.abs(dLat) + Math.abs(dLon);
+      if (dist > 0.000001) {
+        cur.lat += dLat * LERP_SPEED;
+        cur.lon += dLon * LERP_SPEED;
+        anyMoving = true;
+        // Update marker position smoothly
+        if (markerObjects[v.id]) {
+          markerObjects[v.id].setLatLng([cur.lat, cur.lon]);
+        }
+      }
+    }
+    animFrame = requestAnimationFrame(tick);
+  }
+  animFrame = requestAnimationFrame(tick);
+}
+
+// ── Map init ─────────────────────────────────────────────────────────────────
+function initMap() {
+  map = L.map('map', {
+    center: SEQ_CENTRE,
+    zoom: 11,
+    zoomControl: true,
+  });
+
+  // OpenStreetMap tile layer (works great with dark CSS filter)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | Data: <a href="https://translink.com.au/about-translink/open-data">Translink CC-BY</a>',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // Track shapes drawn below train markers — coloured by official Translink line colour
+  shapesLayer = L.geoJSON(null, {
+    style: function(feature) {
+      return {
+        color:     feature.properties?.colour || '#5bb8ff',
+        weight:    3,
+        opacity:   0.8,
+        lineCap:   'round',
+        lineJoin:  'round',
+      };
+    }
+  }).addTo(map);
+
+  markersLayer  = L.layerGroup().addTo(map);
+  routeLayer    = L.layerGroup().addTo(map);
+  stationsLayer = L.layerGroup().addTo(map);
+}
+
+// ── Track shapes ──────────────────────────────────────────────────────────────
+async function loadShapes() {
+  try {
+    const r = await fetch(`${API_BASE}/api/shapes`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const geojson = await r.json();
+    if (!geojson.loaded) {
+      // Shapes still being downloaded by backend — retry in 5s
+      setTimeout(loadShapes, 5000);
+      return;
+    }
+    shapesLayer.clearLayers();
+    shapesLayer.addData(geojson);
+    shapesLoaded = true;
+    console.log(`Track shapes loaded: ${geojson.segment_count} segments, sample colour: ${geojson.features[0]?.properties?.colour}`);
+  } catch(e) {
+    console.warn('Failed to load track shapes:', e);
+    setTimeout(loadShapes, 10000);
+  }
+}
+
+// ── Station markers ──────────────────────────────────────────────────────────
+async function loadStations() {
+  try {
+    const r = await fetch(`${API_BASE}/api/stations`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    if (!data.stations || data.stations.length === 0) {
+      // GTFS not loaded yet — retry
+      setTimeout(loadStations, 6000);
+      return;
+    }
+    stationsLayer.clearLayers();
+    for (const st of data.stations) {
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid #4a9eda;box-shadow:0 0 4px rgba(0,0,0,0.6)"></div>`,
+        iconSize:   [9, 9],
+        iconAnchor: [4, 4],
+      });
+      const marker = L.marker([st.lat, st.lon], { icon, title: st.stop_name });
+      marker.on('click', () => showStationPopup(st));
+      stationsLayer.addLayer(marker);
+    }
+    stationsLoaded = true;
+    // Schedule re-fetch to get updated arrivals every 30s
+    setTimeout(loadStations, 30000);
+  } catch(e) {
+    console.warn('Failed to load stations:', e);
+    setTimeout(loadStations, 10000);
+  }
+}
+
+function fmtTime(unixSec) {
+  if (!unixSec) return '';
+  return new Date(unixSec * 1000).toLocaleTimeString('en-AU', {hour:'2-digit', minute:'2-digit', hour12:false});
+}
+
+function minsUntil(unixSec) {
+  if (!unixSec) return '';
+  const mins = Math.round((unixSec - Date.now()/1000) / 60);
+  if (mins <= 0)  return 'Now';
+  if (mins === 1) return '1 min';
+  return `${mins} mins`;
+}
+
+// Highlight a train on the map by trip_id — pan to it and select it
+function highlightTrainByTripId(tripId) {
+  const v = vehicles.find(x => x.trip_id === tripId);
+  if (!v) {
+    // Train not yet in position feed — flash the search box
+    showToast(`Train not yet visible on map`);
+    return;
+  }
+  // Close popup and select the train
+  map.closePopup();
+  selectTrain(v.id);
+  map.panTo([v.lat, v.lon], {animate: true, duration: 0.8});
+}
+
+function showStationPopup(st) {
+  const arrivals = st.arrivals || [];
+
+  const rows = arrivals.slice(0,6).map(a => {
+    const bc   = lineColour(a.route_id);
+    const mins = minsUntil(a.arrival_time);
+    const time = fmtTime(a.arrival_time);
+    const ds   = !a.delay ? 'On time' : a.delay > 0
+      ? `+${Math.round(a.delay/60)}m late`
+      : `${Math.abs(Math.round(a.delay/60))}m early`;
+    const delayCol = a.delay > 60 ? '#ff6644' : a.delay < -30 ? '#44aaff' : '#44dd88';
+    const minsCol  = mins === 'Now' ? '#ff8844' : '#c8d0dc';
+    return `<div
+      onclick="highlightTrainByTripId('${a.trip_id}')"
+      style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #2a3040;font-size:11px;cursor:pointer;transition:background .15s;border-radius:3px"
+      onmouseover="this.style.background='#1e2a38'" onmouseout="this.style.background=''"
+    >
+      <div style="width:32px;height:16px;border-radius:3px;background:${bc};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0">${(a.route_id||'').slice(0,3)}</div>
+      <div style="flex:1;color:#c8d0dc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.headsign||'—'}</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0">
+        <div style="color:${minsCol};font-weight:600;font-size:11px">${mins}</div>
+        <div style="color:#4a5a6a;font-size:9px">${time}</div>
+        <div style="color:${delayCol};font-size:9px">${ds}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const html = `<div style="min-width:260px;background:#161a20;border-radius:6px;padding:0;overflow:hidden;font-family:-apple-system,sans-serif">
+    <div style="background:#1c2128;padding:8px 12px;font-weight:600;font-size:13px;color:#fff;border-bottom:1px solid #252d3a">
+      🚉 ${st.stop_name}
+    </div>
+    <div style="padding:4px 10px 8px">
+      <div style="font-size:9px;color:#4a5568;text-transform:uppercase;letter-spacing:1px;padding:6px 0 2px">Next Arrivals — click to track</div>
+      ${rows || '<div style="color:#4a5568;font-size:11px;padding:8px 0">No arrivals found</div>'}
+    </div>
+  </div>`;
+
+  L.popup({ maxWidth: 320, className: 'station-popup' })
+    .setLatLng([st.lat, st.lon])
+    .setContent(html)
+    .openOn(map);
+}
+
+// ── Data fetching ─────────────────────────────────────────────────────────────
+async function fetchVehicles() {
+  try {
+    const r = await fetch(`${API_BASE}/api/vehicles`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    return data;
+  } catch(e) {
+    console.error('Failed to fetch vehicles:', e);
+    throw e;
+  }
+}
+
+async function fetchAlerts() {
+  try {
+    const r = await fetch(`${API_BASE}/api/alerts`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } catch(e) {
+    console.error('Failed to fetch alerts:', e);
+    return { alerts: [] };
+  }
+}
+
+// ── Delay helpers ─────────────────────────────────────────────────────────────
+function delayClass(sec) {
+  if (sec === null || sec === undefined) return 'on-time';
+  if (sec > 60)  return 'late';
+  if (sec < -30) return 'early';
+  return 'on-time';
+}
+
+function delayLabel(sec) {
+  if (sec === null || sec === undefined || sec === 0) return 'On Time';
+  if (sec > 0) return `+${Math.round(sec/60)}m late`;
+  return `${Math.abs(Math.round(sec/60))}m early`;
+}
+
+function delayBadgeClass(sec) {
+  const c = delayClass(sec);
+  return c === 'late' ? 'delay-late' : c === 'early' ? 'delay-early' : 'delay-on-time';
+}
+
+// ── Route colour lookup — populated dynamically from GTFS routes.txt ────────
+// Fallback static rules while the live map loads
+// Translink actual format: SHBR-4727 (2-letter line + 2-letter dest + trip number)
+const LINE_COLOUR_RULES = [
+  // 2-letter line prefixes (primary — these match the live feed)
+  {k:'SH', c:'#00aeef'}, // Shorncliffe
+  {k:'SP', c:'#1c63b7'}, // Springfield
+  {k:'VL', c:'#f5a400'}, // Varsity Lakes / Gold Coast
+  {k:'RW', c:'#f47920'}, // Rosewood / Ipswich
+  {k:'FG', c:'#e3000f'}, // Ferny Grove
+  {k:'DO', c:'#e0007f'}, // Doomben
+  {k:'AP', c:'#6b21a8'}, // Airport
+  {k:'CL', c:'#ffd600'}, // Cleveland
+  {k:'BE', c:'#6fbe44'}, // Beenleigh
+  {k:'CA', c:'#7b2d8b'}, // Caboolture
+  {k:'NA', c:'#7b2d8b'}, // Nambour
+  {k:'KP', c:'#00b5cc'}, // Kippa-Ring
+  {k:'IP', c:'#f47920'}, // Ipswich
+  {k:'RP', c:'#00b5cc'}, // Redcliffe
+  {k:'GL', c:'#f5a400'}, // Gold Coast alt
+  {k:'IM', c:'#6fbe44'}, // Inner Metro
+  // BN-prefix format
+  {k:'BNFG',c:'#e3000f'},{k:'BNCAB',c:'#7b2d8b'},{k:'BNKCL',c:'#00b5cc'},
+  {k:'BNIPL',c:'#f47920'},{k:'BNSPR',c:'#1c63b7'},{k:'BNBEL',c:'#6fbe44'},
+  {k:'BNCLV',c:'#ffd600'},{k:'BNGOL',c:'#f5a400'},{k:'BNSH', c:'#00aeef'},
+  {k:'BNAIR',c:'#6b21a8'},{k:'BNDOO',c:'#e0007f'},{k:'BNNAI',c:'#7b2d8b'},
+  // Short fallbacks
+  {k:'FER',c:'#e3000f'},{k:'CAB',c:'#7b2d8b'},{k:'KCL',c:'#00b5cc'},
+  {k:'IPL',c:'#f47920'},{k:'SPR',c:'#1c63b7'},{k:'BEL',c:'#6fbe44'},
+  {k:'CLV',c:'#ffd600'},{k:'GOL',c:'#f5a400'},{k:'SHO',c:'#00aeef'},
+  {k:'AIR',c:'#6b21a8'},{k:'DOO',c:'#e0007f'},{k:'IMU',c:'#6fbe44'},
+  {k:'NAI',c:'#7b2d8b'},{k:'ROS',c:'#f47920'},{k:'BAN',c:'#6b21a8'},
+];
+
+// Live map: route_id -> hex colour, fetched from backend GTFS data
+const ROUTE_COLOUR_MAP = {};
+
+async function loadRouteColours() {
+  // Also try the live debug endpoint which cross-references realtime route_ids
+  const tryLoad = async () => {
+    try {
+      // Load from static GTFS routes
+      const r1 = await fetch('/api/debug/routes');
+      const d1 = await r1.json();
+      let loaded = 0;
+      for (const route of (d1.gtfs_routes || [])) {
+        const col = route.gtfs_color || route.computed_colour;
+        if (col && col !== '#5bb8ff') {
+          ROUTE_COLOUR_MAP[route.route_id] = col;
+          loaded++;
+        }
+      }
+      // Also load live route_id -> colour mapping
+      const r2 = await fetch('/api/debug/live');
+      const d2 = await r2.json();
+      for (const rt of (d2.live_route_ids || [])) {
+        const col = rt.gtfs_colour || rt.computed_colour;
+        if (col && col !== '#5bb8ff') {
+          ROUTE_COLOUR_MAP[rt.route_id] = col;
+        }
+      }
+      console.log(`Route colour map: ${Object.keys(ROUTE_COLOUR_MAP).length} entries. Sample:`,
+        Object.entries(ROUTE_COLOUR_MAP).slice(0,4));
+      if (loaded === 0) {
+        // GTFS not loaded yet, retry in 5s
+        setTimeout(tryLoad, 5000);
+      }
+    } catch(e) {
+      console.warn('Route colour load failed:', e);
+      setTimeout(tryLoad, 5000);
+    }
+  };
+  tryLoad();
+}
+
+const _lcLogged = new Set();
+function lineColour(routeId) {
+  if (!routeId) return '#888888';
+  // 1. Exact match from live GTFS data
+  if (ROUTE_COLOUR_MAP[routeId]) return ROUTE_COLOUR_MAP[routeId];
+  // 2. Substring match against known keywords
+  const upper = routeId.toUpperCase();
+  for (const {k, c} of LINE_COLOUR_RULES) {
+    if (upper.includes(k)) return c;
+  }
+  if (!_lcLogged.has(upper)) { console.log('Unknown route_id (no colour):', routeId); _lcLogged.add(upper); }
+  return '#7a8899';
+}
+
+// ── Marker creation (SVG — bearing arrow is rotated inside SVG, no CSS conflicts) ──
+// Canvas-based marker — bearing rotation done via ctx.rotate(), completely
+// immune to Leaflet's DOM transform interference.
+function createMarkerIcon(vehicle, selected) {
+  const bearing = (vehicle.bearing || 0) * Math.PI / 180;  // radians
+  const colour  = lineColour(vehicle.route_id);
+  const size    = selected ? 48 : 40;
+  const r       = selected ? 13 : 11;
+  const label   = (vehicle.route_id || '').slice(0, 3);
+
+  const canvas  = document.createElement('canvas');
+  canvas.width  = size;
+  canvas.height = size;
+  const ctx     = canvas.getContext('2d');
+  const cx      = size / 2;
+  const cy      = size / 2;
+
+  // ── Arrow (rotated to bearing) ────────────────────────────────────────────
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(bearing);           // 0° = up = north, clockwise positive
+  ctx.beginPath();
+  const tipY  = -(r + 9);       // tip above centre
+  const baseY = -(r - 1);       // base just outside circle edge
+  ctx.moveTo(0, tipY);           // tip
+  ctx.lineTo(-5, baseY);         // left base
+  ctx.lineTo( 5, baseY);         // right base
+  ctx.closePath();
+  ctx.fillStyle = colour;
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.lineWidth = 1;
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // ── Circle body ───────────────────────────────────────────────────────────
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = colour;
+  ctx.fill();
+
+  // Circle border
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = selected ? '#fbbf24' : 'rgba(255,255,255,0.6)';
+  ctx.lineWidth   = selected ? 3 : 1.5;
+  ctx.stroke();
+
+  // Selected glow ring
+  if (selected) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(251,191,36,0.4)';
+    ctx.lineWidth   = 3;
+    ctx.stroke();
+  }
+
+  // ── Route label text ──────────────────────────────────────────────────────
+  ctx.fillStyle    = 'white';
+  ctx.font         = `bold ${selected ? 9 : 8}px -apple-system, sans-serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, cx, cy + 1);
+
+  // Convert canvas to data URL for Leaflet divIcon
+  const dataUrl = canvas.toDataURL();
+  const html    = `<img src="${dataUrl}" width="${size}" height="${size}" style="display:block">`;
+
+  return L.divIcon({
+    className:   '',
+    html,
+    iconSize:    [size, size],
+    iconAnchor:  [size/2, size/2],
+    popupAnchor: [0, -(size/2 + 4)],
+  });
+}
+
+// ── Map update ────────────────────────────────────────────────────────────────
+function updateMap(data) {
+  vehicles = data.vehicles || [];
+  const existingIds = new Set(Object.keys(markerObjects));
+  const newIds      = new Set(vehicles.map(v => v.id));
+
+  // Remove stale markers and animation state
+  for (const id of existingIds) {
+    if (!newIds.has(id)) {
+      markersLayer.removeLayer(markerObjects[id]);
+      delete markerObjects[id];
+      delete animPos[id];
+    }
+  }
+
+  for (const v of vehicles) {
+    const isSelected = v.id === selectedId;
+
+    // Seed animPos on first sight — marker appears at real position immediately
+    if (!animPos[v.id]) {
+      animPos[v.id] = {lat: v.lat, lon: v.lon};
+    }
+    // animPos target is updated; the anim loop will lerp toward v.lat/v.lon
+
+    const renderPos = animPos[v.id];
+
+    if (markerObjects[v.id]) {
+      // Only update icon (position is handled by the smooth anim loop)
+      markerObjects[v.id].setIcon(createMarkerIcon(v, isSelected));
+    } else {
+      // Create new marker at current (real) position
+      const marker = L.marker([renderPos.lat, renderPos.lon], {
+        icon: createMarkerIcon(v, isSelected),
+        title: `${v.route_id} – ${v.label}`,
+      });
+
+      marker.on('click', () => selectTrain(v.id));
+      marker.bindTooltip(buildTooltip(v), {
+        direction: 'top',
+        offset: [0, -10],
+        className: 'train-tooltip',
+      });
+
+      marker.addTo(markersLayer);
+      markerObjects[v.id] = marker;
+    }
+
+    // Update tooltip
+    markerObjects[v.id].setTooltipContent(buildTooltip(v));
+
+    if (showLabels) {
+      markerObjects[v.id].openTooltip();
+    }
+  }
+
+  // Ensure smooth animation loop is running
+  startAnimLoop();
+}
+
+function buildTooltip(v) {
+  const delay = delayLabel(v.delay_seconds);
+  const speed = v.speed ? `${v.speed} km/h` : '—';
+  const dest  = v.headsign ? `<br/>→ <span style="color:#93c5fd">${v.headsign}</span>` : '';
+  const stop  = v.current_stop_name
+    ? `<br/><span style="color:#7a9ab8;font-size:11px">${statusVerb(v.current_status)} ${v.current_stop_name}</span>`
+    : '';
+  return `<div style="background:#0d1b2a;border:1px solid #1e3a5a;border-radius:6px;padding:6px 10px;font-size:12px;color:#e0e6f0;max-width:220px">
+    <b style="color:#e63946">${v.route_id}</b> &nbsp; ${v.label}${dest}${stop}<br/>
+    <span style="color:#7a9ab8">${delay} &nbsp;·&nbsp; ${speed}</span>
+  </div>`;
+}
+
+function statusVerb(status) {
+  if (status === 'STOPPED_AT')        return 'At';
+  if (status === 'IN_TRANSIT_TO')     return 'To';
+  if (status === 'INCOMING_AT')       return 'Arriving';
+  return '';
+}
+
+// ── Sidebar train list ────────────────────────────────────────────────────────
+function renderTrainList() {
+  const query = document.getElementById('search-input').value.toLowerCase();
+  const filtered = vehicles.filter(v =>
+    !query ||
+    v.route_id.toLowerCase().includes(query) ||
+    v.id.toLowerCase().includes(query) ||
+    v.label.toLowerCase().includes(query)
+  );
+
+  const list = document.getElementById('train-list');
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="no-data">${vehicles.length ? 'No trains match your search.' : 'No active trains found.'}</div>`;
+    return;
+  }
+
+  // Sort by route then delay severity
+  filtered.sort((a, b) => {
+    if (a.route_id < b.route_id) return -1;
+    if (a.route_id > b.route_id) return 1;
+    return (b.delay_seconds || 0) - (a.delay_seconds || 0);
+  });
+
+  list.innerHTML = filtered.map(v => {
+    const speedPct = v.speed ? Math.min(100, (v.speed / 130) * 100) : 0;
+    return `
+      <div class="train-card ${v.id === selectedId ? 'selected' : ''}" onclick="selectTrain('${v.id}')">
+        <div class="train-card-header">
+          <span class="route-badge">${v.route_id}</span>
+          <span class="delay-badge ${delayBadgeClass(v.delay_seconds)}">${delayLabel(v.delay_seconds)}</span>
+        </div>
+        <div class="train-info">
+          <strong>${v.label}</strong>
+          ${v.headsign ? ` <span style="color:#7a9ab8">→ ${v.headsign}</span>` : ''}
+        </div>
+        ${v.current_stop_name ? `<div class="train-info" style="font-size:0.68rem;margin-top:2px;color:#506070">${statusVerb(v.current_status)} ${v.current_stop_name}</div>` : ''}
+        <div class="speed-indicator">
+          <span style="color:#4a6a8a;font-size:0.65rem">0</span>
+          <div class="speed-bar-bg">
+            <div class="speed-bar-fill" style="width:${speedPct}%"></div>
+          </div>
+          <span style="color:#7a9ab8">${v.speed ? v.speed + ' km/h' : '—'}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Select / focus a train ────────────────────────────────────────────────────
+function selectTrain(id) {
+  selectedId = (selectedId === id) ? null : id;
+
+  // Refresh marker icons
+  for (const v of vehicles) {
+    if (markerObjects[v.id]) {
+      markerObjects[v.id].setIcon(createMarkerIcon(v, v.id === selectedId));
+    }
+  }
+
+  renderTrainList();
+
+  if (!selectedId) {
+    closeInfoPanel();
+    return;
+  }
+
+  const v = vehicles.find(x => x.id === selectedId);
+  if (!v) return;
+
+  // Pan to train
+  map.panTo([v.lat, v.lon], { animate: true });
+
+  // Show info panel
+  showInfoPanel(v);
+}
+
+function bearingCompass(deg) {
+  if (deg === null || deg === undefined) return '—';
+  const dirs = ['N','NE','E','SE','S','SW','W','NW','N'];
+  return dirs[Math.round(deg / 45) % 8] + ` (${Math.round(deg)}°)`;
+}
+
+function showInfoPanel(v) {
+  const panel   = document.getElementById('info-panel');
+  const titleEl = document.getElementById('info-title');
+  const content = document.getElementById('info-content');
+
+  const dest = v.headsign || '—';
+  titleEl.innerHTML = `🚆 <span style="color:#e63946">${v.route_id}</span> → ${dest}`;
+
+  // Current station line
+  let statusLine = '—';
+  if (v.current_stop_name) {
+    statusLine = `${statusVerb(v.current_status)} <strong>${v.current_stop_name}</strong>`;
+  } else if (v.current_status) {
+    statusLine = v.current_status.replace(/_/g, ' ');
+  }
+
+  const rows = [
+    ['Status',    statusLine],
+    ['Delay',     delayLabel(v.delay_seconds)],
+    ['Speed',     v.speed ? `${v.speed} km/h` : '—'],
+    ['Heading',   bearingCompass(v.bearing)],
+    ['Direction', v.direction_id !== undefined ? (v.direction_id === 0 ? 'Outbound' : 'Inbound') : '—'],
+    ['Train',     v.label],
+    ['Trip ID',   v.trip_id || '—'],
+  ];
+
+  content.innerHTML = rows.map(([label, value]) => `
+    <div class="info-row">
+      <span class="label">${label}</span>
+      <span class="value">${value}</span>
+    </div>`).join('');
+
+  // Next stops with names
+  if (v.next_stops && v.next_stops.length) {
+    content.innerHTML += `<div style="font-size:0.72rem;color:#7a9ab8;margin-top:8px;margin-bottom:4px">Next Stops</div>`;
+    const trainDelay = v.delay_seconds || 0;
+    content.innerHTML += v.next_stops.slice(0, 4).map(s => {
+      const raw  = s.stop_name || s.stop_id;
+      // Strip platform suffix: ", platform X", ", Platform X", " platform X"
+      const name = raw.replace(/,?\s*[Pp]latform\s*\d+/g, '').trim();
+      const d    = s.arrival_delay;
+      // Only show delay if it differs meaningfully from the train's overall delay
+      let delayStr = '';
+      if (d !== null && d !== undefined) {
+        const diffFromOverall = d - trainDelay;
+        if (Math.abs(d) < 60) {
+          delayStr = 'On time';
+        } else if (Math.abs(diffFromOverall) >= 60) {
+          // This stop has a notably different delay — show it
+          delayStr = d > 0 ? `+${Math.round(d/60)}m` : `${Math.round(d/60)}m`;
+        }
+        // Otherwise leave blank — delay shown in header already
+      }
+      const delayCol = !delayStr || delayStr==='On time' ? '#7a9ab8'
+                     : d > 60 ? '#fca5a5' : '#93c5fd';
+      return `<div class="info-row">
+        <span class="label" style="max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${raw}">${name}</span>
+        <span class="value" style="color:${delayCol}">${delayStr}</span>
+      </div>`;
+    }).join('');
+  }
+
+  panel.classList.add('visible');
+}
+
+function closeInfoPanel() {
+  selectedId = null;
+  document.getElementById('info-panel').classList.remove('visible');
+  renderTrainList();
+  for (const v of vehicles) {
+    if (markerObjects[v.id]) {
+      markerObjects[v.id].setIcon(createMarkerIcon(v, false));
+    }
+  }
+}
+
+// ── Alerts ───────────────────────────────────────────────────────────────────
+function renderAlerts(alertData) {
+  const list   = document.getElementById('alerts-list');
+  const alerts = alertData.alerts || [];
+  const tab    = document.querySelector('.sidebar-tabs .tab:nth-child(2)');
+
+  if (!alerts.length) {
+    list.innerHTML = `<div class="no-data">✅ No active service alerts.</div>`;
+    tab.textContent = '⚠️ Alerts';
+    return;
+  }
+
+  tab.textContent = `⚠️ Alerts (${alerts.length})`;
+
+  list.innerHTML = alerts.map(a => `
+    <div class="alert-card">
+      <div class="alert-header">${a.header || 'Service Alert'}</div>
+      <div class="alert-desc">${a.description || ''}</div>
+      <div class="alert-tags">
+        <span class="alert-tag">${a.effect}</span>
+        <span class="alert-tag">${a.cause}</span>
+        ${a.routes.slice(0,3).map(r => `<span class="alert-tag">${r}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// ── Header update ─────────────────────────────────────────────────────────────
+function updateHeader(data) {
+  const pill       = document.getElementById('status-pill');
+  const countEl    = document.getElementById('vehicle-count');
+  const updatedEl  = document.getElementById('last-updated');
+
+  countEl.textContent = data.count || 0;
+
+  if (data.error) {
+    pill.className = 'stat-pill error';
+    updatedEl.textContent = `Error: ${data.error}`;
+  } else {
+    const age = data.last_updated ? Math.round(Date.now()/1000 - data.last_updated) : null;
+    pill.className = (age && age > 60) ? 'stat-pill stale' : 'stat-pill';
+    updatedEl.textContent = age ? `Updated ${age}s ago` : 'Live';
+  }
+}
+
+// ── Main refresh ──────────────────────────────────────────────────────────────
+async function refresh() {
+  try {
+    const [vehicleData, alertData] = await Promise.all([fetchVehicles(), fetchAlerts()]);
+    updateMap(vehicleData);
+    updateHeader(vehicleData);
+    renderTrainList();
+    renderAlerts(alertData);
+
+    // Update info panel if open
+    if (selectedId) {
+      const v = vehicles.find(x => x.id === selectedId);
+      if (v) showInfoPanel(v);
+    }
+  } catch(e) {
+    document.getElementById('last-updated').textContent = 'Connection error';
+    document.getElementById('status-pill').className = 'stat-pill error';
+    showToast(`⚠️ ${e.message}`);
+  }
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', (i === 0 && name === 'trains') || (i === 1 && name === 'alerts')));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+}
+
+function filterTrains() { renderTrainList(); }
+
+function toggleLabels() {
+  showLabels = !showLabels;
+  document.getElementById('toggle-labels-btn').classList.toggle('active', showLabels);
+  for (const v of vehicles) {
+    const m = markerObjects[v.id];
+    if (!m) continue;
+    if (showLabels) m.openTooltip(); else m.closeTooltip();
+  }
+}
+
+function toggleAutoRefresh() {
+  autoRefresh = !autoRefresh;
+  const btn = document.getElementById('auto-refresh-btn');
+  btn.classList.toggle('active', autoRefresh);
+  btn.textContent = autoRefresh ? 'Live ●' : 'Paused ◼';
+  if (autoRefresh) scheduleRefresh();
+  else if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+  showToast(autoRefresh ? '▶ Live tracking resumed' : '⏸ Tracking paused');
+}
+
+function scheduleRefresh() {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  if (!autoRefresh) return;
+  refreshTimer = setTimeout(async () => {
+    await refresh();
+    scheduleRefresh();
+  }, REFRESH_MS);
+}
+
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+(async () => {
+  initMap();
+  loadRouteColours(); // fetch live route->colour map from GTFS
+  loadShapes();       // fetch track shapes from GTFS (runs in background)
+  loadStations();     // fetch station markers with arrivals
+
+  const loading = document.getElementById('loading');
+
+  // Initial load with retry
+  let attempts = 0;
+  while (attempts < 5) {
+    try {
+      await refresh();
+      break;
+    } catch(e) {
+      attempts++;
+      if (attempts < 5) {
+        document.querySelector('.loader-text').textContent = `Retrying… (attempt ${attempts+1}/5)`;
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+  }
+
+  loading.classList.add('fade');
+  setTimeout(() => loading.remove(), 500);
+
+  scheduleRefresh();
+})();
+</script>
+</body>
+</html>

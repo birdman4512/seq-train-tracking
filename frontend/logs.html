@@ -62,7 +62,7 @@
     return 'line-INFO';
   }
 
-  const BASE=(()=>{const p=location.pathname;return p.endsWith('/')?p.slice(0,-1):p.substring(0,p.lastIndexOf('/'));})();
+  const BASE=(()=>{const p=location.pathname;const f=p.endsWith('/')?p.replace(/\/+$/,''):p.substring(0,p.lastIndexOf('/'));return f==='/'?'':f;})();
 async function fetchLogs() {
     try {
       const r = await fetch(BASE+'/api/logs');

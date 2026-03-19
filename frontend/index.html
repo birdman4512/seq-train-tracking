@@ -475,7 +475,13 @@
 // ── Config ───────────────────────────────────────────────────────────────────
 // All API calls go through the nginx proxy on the same origin.
 // The backend is only reachable on the internal Docker network (never exposed to the host).
-const BASE = (()=>{ const p=location.pathname; return p.endsWith('/')?p.slice(0,-1):p.substring(0,p.lastIndexOf('/')); })();
+const BASE = (()=>{
+  const p = location.pathname;
+  // Strip trailing slash, then strip filename to get folder
+  const folder = p.endsWith('/') ? p.replace(/\/+$/, '') : p.substring(0, p.lastIndexOf('/'));
+  // Never return just '/' — return '' for root so BASE+'/api/...' = '/api/...'
+  return folder === '/' ? '' : folder;
+})();
 const API_BASE = BASE;
 
 const REFRESH_MS   = 15000;  // match backend poll interval

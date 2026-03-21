@@ -1,4 +1,6 @@
 ##Git Ignore File
 
+*.pyc
+
 # Ignore log files and logs directory
 logs/

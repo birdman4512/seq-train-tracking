@@ -56,8 +56,6 @@
     }
     h1 span { color: #e63946; }
 
-    .subtitle { font-size: 0.72rem; color: #7a9ab8; }
-
     .header-stats {
       margin-left: auto;
       display: flex;
@@ -181,8 +179,6 @@
     .train-card:hover { border-color: #3d7ab8; background: #162436; }
     .train-card.selected { border-color: #e63946; background: #1a1015; }
 
-
-
     .delay-badge {
       font-size: 0.7rem;
       padding: 2px 7px;
@@ -192,8 +188,6 @@
     .delay-on-time  { background: #14532d; color: #4ade80; }
     .delay-late     { background: #7f1d1d; color: #fca5a5; }
     .delay-early    { background: #1e3a8a; color: #93c5fd; }
-
-
 
     /* Alerts tab */
     .alerts-list { overflow-y: auto; flex: 1; padding: 8px; }
@@ -374,6 +368,23 @@
       0%  { width: 0%; }
       100%{ width: 100%; }
     }
+
+    @media (max-width: 600px) {
+      /* Single-row header — hide everything that doesn't fit */
+      header { padding: 6px 10px; gap: 8px; overflow: hidden; }
+      .logo-icon { width: 28px; height: 28px; font-size: 14px; flex-shrink: 0; }
+      h1 { font-size: 0.95rem; white-space: nowrap; }
+      .header-stats { gap: 6px; flex-wrap: nowrap; overflow: hidden; }
+      .stat-pill { padding: 3px 8px; font-size: 0.68rem; flex-shrink: 0; }
+      #update-pill { display: none; }
+      #toggle-labels-btn { display: none; }
+      .header-sep { display: none; }
+      /* Stack sidebar above map */
+      .main { flex-direction: column; }
+      .sidebar { width: 100%; height: 40vh; border-right: none; border-bottom: 1px solid #1e3a5a; flex-shrink: 0; }
+      .sidebar.collapsed { width: 0; height: 0; opacity: 0; border: none; }
+      #info-panel { width: calc(100vw - 24px); right: 12px; bottom: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -390,8 +401,7 @@
   <div class="logo">
     <div class="logo-icon">🚆</div>
     <div>
-      <h1>Queensland <span>Live Train Tracker</span></h1>
-      <div class="subtitle">Translink SEQ Rail · GTFS-RT · Open Data</div>
+      <h1>SEQ <span>Train Tracker</span></h1>
     </div>
   </div>
   <button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
@@ -405,9 +415,8 @@
     </div>
     <button class="btn" id="toggle-labels-btn" onclick="toggleLabels()">Labels</button>
     <button class="btn active" id="auto-refresh-btn" onclick="toggleAutoRefresh()">Live ●</button>
-    <div style="width:1px;height:20px;background:#1e3a5a;margin:0 4px"></div>
-    <button class="btn active" onclick="">🗺 Map</button>
-    <button class="btn" onclick="window.location.href=API_BASE.replace('/api','') + '/control.html'">🖥 Control</button>
+    <button class="btn active" style="margin-left:8px">🗺</button>
+    <button class="btn" onclick="window.location.href=API_BASE.replace('/api','') + '/control.html'">🖥</button>
   </div>
 </header>
 
@@ -455,18 +464,11 @@
 
 <script>
 // ── Config ───────────────────────────────────────────────────────────────────
-// All API calls go through the nginx proxy on the same origin.
-// The backend is only reachable on the internal Docker network (never exposed to the host).
-// API_BASE: works at root, subfolders, with or without trailing slash
-// Treats the current page URL as a folder (even if no trailing slash)
-// so fetch(API_BASE+'/vehicles') always resolves correctly.
+// Derive API base from current URL — works at root or any subfolder
 const API_BASE = (()=>{
   let path = location.pathname;
-  // If path has no trailing slash and no file extension, treat it as a directory
   if (!path.endsWith('/') && !path.split('/').pop().includes('.')) path += '/';
-  // Get directory portion
-  const dir = path.substring(0, path.lastIndexOf('/') + 1);
-  return location.origin + dir + 'api';
+  return location.origin + path.substring(0, path.lastIndexOf('/') + 1) + 'api';
 })();
 
 const REFRESH_MS   = 15000;  // match backend poll interval
@@ -504,7 +506,7 @@ function startAnimLoop() {
           lat: v.lat, lon: v.lon,
           fromLat: v.lat, fromLon: v.lon,
           toLat: v.lat, toLon: v.lon,
-          progress: 1, speed: 0,
+          progress: 1,
           stoppedAt: null,
           staleRing: false,
           stationaryPolls: 0,
@@ -530,17 +532,11 @@ function startAnimLoop() {
         } else {
           // GPS unchanged this poll
           s.stationaryPolls = (s.stationaryPolls || 0) + 1;
-          // Only flag stale if:
-          // 1. Train is NOT officially at a station
-          // 2. GPS hasn't moved for at least 3 consecutive polls (~45s)
-          // 3. Total stopped time exceeds threshold
-          const atStation = v.current_status === 'STOPPED_AT';
-          if (atStation) {
-            // Normal station dwell — reset everything
-            s.stoppedAt = null;
-            s.staleRing = false;
-            s.stationaryPolls = 0;
-          } else if (s.stationaryPolls >= 3) {
+          if (v.current_status === 'STOPPED_AT') {
+            // Normal station dwell — not stale
+            s.stoppedAt = null; s.staleRing = false; s.stationaryPolls = 0;
+          } else if (s.stationaryPolls >= 8) {
+            // 8 polls (~2 min) without GPS movement while in transit = stale
             if (!s.stoppedAt) s.stoppedAt = now;
             s.staleRing = (now - s.stoppedAt) > STALE_THRESHOLD;
           }
@@ -565,8 +561,6 @@ function startAnimLoop() {
         s.lat = s.toLat; s.lon = s.toLon;
       }
 
-      // ── Stale ring is evaluated inside the isNewPoll block above ──────────
-
       if (markerObjects[v.id]) {
         markerObjects[v.id].setLatLng([s.lat, s.lon]);
         // Update icon if stale state changed (to show/hide red ring)
@@ -588,7 +582,6 @@ function initMap() {
   map = L.map('map', {
     center: SEQ_CENTRE,
     zoom: 11,
-    zoomControl: true,
   });
   map.on('click', () => {
     if (selectedId) {
@@ -694,32 +687,9 @@ function highlightTrainByTripId(tripId) {
     showToast(`Train not yet visible on map`);
     return;
   }
-  // Close popup and select the train
   map.closePopup();
   selectTrain(v.id);
   map.panTo([v.lat, v.lon], {animate: true, duration: 0.8});
-}
-
-function arrivalRow(a) {
-  const bc = lineColour(a.route_id);
-  const mins = minsUntil(a.arrival_time);
-  const time = fmtTime(a.arrival_time);
-  const ds = !a.delay ? 'On time' : a.delay > 0
-    ? `+${Math.round(a.delay/60)}m late`
-    : `${Math.abs(Math.round(a.delay/60))}m early`;
-  const delayCol = a.delay > 60 ? '#ff6644' : a.delay < -30 ? '#44aaff' : '#44dd88';
-  const minsCol  = mins === 'Now' ? '#ff8844' : '#c8d0dc';
-  return `<div onclick="highlightTrainByTripId('${a.trip_id}')"
-    style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #2a3040;font-size:11px;cursor:pointer;border-radius:3px"
-    onmouseover="this.style.background='#1e2a38'" onmouseout="this.style.background=''">
-    <div style="width:32px;height:16px;border-radius:3px;background:${bc};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0">${(a.route_id||'').slice(0,3)}</div>
-    <div style="flex:1;color:#c8d0dc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.headsign||'—'}</div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0">
-      <div style="color:${minsCol};font-weight:600;font-size:11px">${mins}</div>
-      <div style="color:#4a5a6a;font-size:9px">${time}</div>
-      <div style="color:${delayCol};font-size:9px">${ds}</div>
-    </div>
-  </div>`;
 }
 
 function showStationPopup(st) {
@@ -812,7 +782,7 @@ async function fetchAlerts() {
 
 // ── Delay helpers ─────────────────────────────────────────────────────────────
 function delayLabel(sec) {
-  if (!sec) return 'On Time';
+  if (!sec || (sec > 0 && sec <= 60) || (sec < 0 && sec >= -30)) return 'On Time';
   if (sec > 0) return `+${Math.round(sec/60)}m late`;
   return `${Math.abs(Math.round(sec/60))}m early`;
 }
@@ -823,16 +793,9 @@ function delayBadgeClass(sec) {
   return 'delay-on-time';
 }
 
-// ── Route colour lookup — populated dynamically from GTFS routes.txt ────────
-// Fallback static rules while the live map loads
-// Translink actual format: SHBR-4727 (2-letter line + 2-letter dest + trip number)
-// Colour rules — handles both prefix-based (SHBR-4727) and 3-letter (BRF, SPR) route_ids
-// Route ID format confirmed from GTFS debug/routes API
-// Colour lookup — backend sends v.colour for vehicles (authoritative).
-// lineColour() is only used as fallback for station popups that have route_id only.
-// Map: keywords in GTFS route name → colour
-// route_id 4-letter code → hex colour (fallback for station popups lacking v.colour)
-// v.colour from backend is the primary source; this is only used for arrival rows
+// ── Route colour lookup ─────────────────────────────────────────────────────
+// v.colour from backend is authoritative for vehicles.
+// lineColour() is used only for station arrival rows (route_id only, no v.colour).
 const R='#e3000f',G='#007b40',O='#f5a400',B='#00aeef',P='#7b2d8b';
 const ROUTE_COLOUR_TABLE = {
   FGBR:R,BRFG:R,BNFG:R,FGBN:R,BRBR:R,BNBN:R,BNBR:R,BRBN:R,BDBN:R,BNBD:R,
@@ -858,9 +821,7 @@ function lineColour(routeId) {
   return (_lcCache[routeId] = c || '#7a8899');
 }
 
-// ── Marker creation (SVG — bearing arrow is rotated inside SVG, no CSS conflicts) ──
-// Canvas-based marker — bearing rotation done via ctx.rotate(), completely
-// immune to Leaflet's DOM transform interference.
+// ── Marker creation ──────────────────────────────────────────────────────────
 function createMarkerIcon(vehicle, selected) {
   const bearing = (vehicle.bearing || 0) * Math.PI / 180;  // radians
   const colour  = (vehicle.colour || lineColour(vehicle.route_id));
@@ -1159,29 +1120,19 @@ function showInfoPanel(v) {
   // Next stops with names
   if (v.next_stops && v.next_stops.length) {
     content.innerHTML += `<div style="font-size:0.72rem;color:#7a9ab8;margin-top:8px;margin-bottom:4px">Next Stops</div>`;
-    const trainDelay = v.delay_seconds || 0;
     content.innerHTML += v.next_stops.slice(0, 4).map(s => {
-      const raw  = s.stop_name || s.stop_id;
-      // Strip platform suffix: ", platform X", ", Platform X", " platform X"
-      const name = raw.replace(/,?\s*[Pp]latform\s*\d+/g, '').trim();
-      const d    = s.arrival_delay;
-      // Only show delay if it differs meaningfully from the train's overall delay
-      let delayStr = '';
-      if (d !== null && d !== undefined) {
-        const diffFromOverall = d - trainDelay;
-        if (Math.abs(d) < 60) {
-          delayStr = 'On time';
-        } else if (Math.abs(diffFromOverall) >= 60) {
-          // This stop has a notably different delay — show it
-          delayStr = d > 0 ? `+${Math.round(d/60)}m` : `${Math.round(d/60)}m`;
-        }
-        // Otherwise leave blank — delay shown in header already
-      }
-      const delayCol = !delayStr || delayStr==='On time' ? '#7a9ab8'
-                     : d > 60 ? '#fca5a5' : '#93c5fd';
+      const name    = (s.stop_name || s.stop_id).replace(/,?\s*[Pp]latform\s*\d+/g, '').trim();
+      const arrTime = s.arrival_time ? fmtTime(s.arrival_time) : '';
+      const d       = s.arrival_delay;
+      // Always show delay status for each stop
+      const delayStr = (d === null || d === undefined) ? '' : delayLabel(d);
+      const delayCol = d > 60 ? '#fca5a5' : d < -30 ? '#93c5fd' : '#4ade80';
       return `<div class="info-row">
-        <span class="label" style="max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${raw}">${name}</span>
-        <span class="value" style="color:${delayCol}">${delayStr}</span>
+        <span class="label" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+        <span style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          ${arrTime ? `<span class="value" style="color:#a0b8cc">${arrTime}</span>` : ''}
+          ${delayStr ? `<span class="value" style="font-size:0.68rem;color:${delayCol}">${delayStr}</span>` : ''}
+        </span>
       </div>`;
     }).join('');
   }
@@ -1349,12 +1300,10 @@ function toggleSidebar() {
   setTimeout(() => { if (map) map.invalidateSize(); }, 260);
 }
 
-// Start collapsed on narrow screens
-if (window.innerWidth < 768) {
-  document.querySelector('.sidebar').classList.add('collapsed');
-  const btn = document.getElementById('sidebar-toggle');
-  if (btn) { btn.textContent = '▶'; btn.title = 'Open sidebar'; }
-}
+// Sidebar collapsed by default on all screens
+document.querySelector('.sidebar').classList.add('collapsed');
+const _stb = document.getElementById('sidebar-toggle');
+if (_stb) { _stb.textContent = '▶'; _stb.title = 'Open sidebar'; }
 
 </script>
 </body>

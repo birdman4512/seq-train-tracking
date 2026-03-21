@@ -144,46 +144,93 @@ const C={
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LINES — one horizontal row each, no crossings ever.
-// row: integer y-slot (×2U = pixel y). Negative = above centre, positive = below.
-// dx:  +1 = line extends right, -1 = line extends left.
-// Rows -1 to -6 above, +1 to +5 below.
+// LINES — shared trunk + 45° fan layout.
+//
+// Right lines (row < 0): share trunk Roma St→Central→Fortitude Valley→Bowen Hills
+//   at y=0, then a 45° diagonal from Bowen Hills up to the line's row, then
+//   horizontal rightward for the remaining stops.
+//
+// Left lines (row > 0): Roma Street at x=0, then 45° diagonal left+down for
+//   |row| steps, then horizontal leftward for remaining stops.
+//
+// TRUNK_RIGHT = 3 steps (4 shared stops). Diagonal = |row| steps.
+// Horizontal section starts at x = TRUNK + |row| for right lines.
+//
+// Rows: -1=FER, -2=SHO, -3=AIR, -4=DOO, -5=CAB, -6=KCL above;
+//        +1=BEL, +2=GOL, +3=CLV, +4=IPL, +5=SPR below.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Shared trunk stops for right-side lines (placed at y=0)
+const TRUNK=['Roma Street','Central','Fortitude Valley','Bowen Hills'];
+
 const LINES=[
-  {id:'FER',col:C.FER,row:-1,dx:+1,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Windsor','Wilston','Newmarket','Alderley','Enoggera','Gaythorne','Mitchelton','Oxford Park','Grovely','Keperra','Ferny Grove']},
-  {id:'SHO',col:C.SHO,row:-2,dx:+1,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Wooloowin','Albion','Bindha','Banyo','Nudgee','Boondall','North Boondall','Deagon','Sandgate','Shorncliffe']},
-  {id:'AIR',col:C.AIR,row:-3,dx:+1,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Wooloowin','Albion','Domestic Airport','International Airport']},
-  {id:'DOO',col:C.DOO,row:-4,dx:+1,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Clayfield','Hendra','Ascot','Doomben']},
-  {id:'CAB',col:C.CAB,row:-5,dx:+1,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate','Carseldine','Bald Hills','Strathpine','Lawnton','Petrie','Narangba','Burpengary','Morayfield','Caboolture','Elimbah','Beerburrum','Glasshouse Mountains','Beerwah','Landsborough','Woombye','Nambour','Gympie North']},
-  {id:'KCL',col:C.KCL,row:-6,dx:+1,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate','Carseldine','Bald Hills','Strathpine','Lawnton','Petrie','Kallangur','Murrumba Downs','Mango Hill','Mango Hill East','Rothwell','Kippa-Ring']},
-  {id:'BEL',col:C.BEL,row:+1,dx:-1,stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh']},
-  {id:'GOL',col:C.GOL,row:+2,dx:-1,stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh','Ormeau','Pimpama','Coomera','Helensvale','Nerang','Robina','Varsity Lakes']},
-  {id:'CLV',col:C.CLV,row:+3,dx:-1,stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Buranda','Coorparoo','Norman Park','Morningside','Cannon Hill','Murarrie','Hemmant','Lindum','Wynnum North','Wynnum','Wynnum Central','Manly','Lota','Thorneside','Birkdale','Wellington Point','Ormiston','Cleveland']},
-  {id:'IPL',col:C.IPL,row:+4,dx:-1,stops:['Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Wacol','Gailes','Goodna','Redbank','Riverview','Dinmore','Bundamba','Booval','Ipswich','Walloon','Rosewood']},
-  {id:'SPR',col:C.SPR,row:+5,dx:-1,stops:['Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Richlands','Springfield','Springfield Central']},
+  // Right lines — shared trunk then 45° then horizontal
+  // trunk_after: stops after the shared trunk that continue on THIS line's horizontal row
+  {id:'FER',col:C.FER,row:-1,trunk_after:['Windsor','Wilston','Newmarket','Alderley','Enoggera','Gaythorne','Mitchelton','Oxford Park','Grovely','Keperra','Ferny Grove']},
+  {id:'SHO',col:C.SHO,row:-2,trunk_after:['Eagle Junction','Wooloowin','Albion','Bindha','Banyo','Nudgee','Boondall','North Boondall','Deagon','Sandgate','Shorncliffe']},
+  {id:'AIR',col:C.AIR,row:-3,trunk_after:['Eagle Junction','Wooloowin','Albion','Domestic Airport','International Airport']},
+  {id:'DOO',col:C.DOO,row:-4,trunk_after:['Eagle Junction','Clayfield','Hendra','Ascot','Doomben']},
+  {id:'CAB',col:C.CAB,row:-5,trunk_after:['Eagle Junction','Northgate','Carseldine','Bald Hills','Strathpine','Lawnton','Petrie','Narangba','Burpengary','Morayfield','Caboolture','Elimbah','Beerburrum','Glasshouse Mountains','Beerwah','Landsborough','Woombye','Nambour','Gympie North']},
+  {id:'KCL',col:C.KCL,row:-6,trunk_after:['Eagle Junction','Northgate','Carseldine','Bald Hills','Strathpine','Lawnton','Petrie','Kallangur','Murrumba Downs','Mango Hill','Mango Hill East','Rothwell','Kippa-Ring']},
+  // Left lines — Roma Street then 45° then horizontal left
+  // left_stops: stops after Roma Street, placed along the horizontal section
+  {id:'BEL',col:C.BEL,row:+1,left_stops:['South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh']},
+  {id:'GOL',col:C.GOL,row:+2,left_stops:['South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh','Ormeau','Pimpama','Coomera','Helensvale','Nerang','Robina','Varsity Lakes']},
+  {id:'CLV',col:C.CLV,row:+3,left_stops:['South Brisbane','South Bank','Boggo Road','Buranda','Coorparoo','Norman Park','Morningside','Cannon Hill','Murarrie','Hemmant','Lindum','Wynnum North','Wynnum','Wynnum Central','Manly','Lota','Thorneside','Birkdale','Wellington Point','Ormiston','Cleveland']},
+  {id:'IPL',col:C.IPL,row:+4,left_stops:['Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Wacol','Gailes','Goodna','Redbank','Riverview','Dinmore','Bundamba','Booval','Ipswich','Walloon','Rosewood']},
+  {id:'SPR',col:C.SPR,row:+5,left_stops:['Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Richlands','Springfield','Springfield Central']},
 ];
 
+// Derive full stops list for each line (used by trainPos)
+for(const ln of LINES){
+  if(ln.trunk_after) ln.stops=[...TRUNK,...ln.trunk_after];
+  else               ln.stops=['Roma Street',...ln.left_stops];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// LAYOUT ENGINE — flat horizontal lines, no tree, no kinks, no crossings.
-// Each line occupies one row at y = row * 2U.
-// Stations are spaced U pixels apart along x.
-// Roma Street is always at x=0 on every line.
+// LAYOUT ENGINE
+// Shared trunk at y=0 (right lines). 45° diagonal connector. Horizontal section.
 // ─────────────────────────────────────────────────────────────────────────────
 let canW=0,canH=0,vp={x:0,y:0,scale:1};
 let drawSegs=[],linePts={};
 
+let U_last=20;
 function buildLayout(W,H){
   drawSegs=[];
   for(const ln of LINES) linePts[ln.id]=[];
-  // U: fit longest line (~24 stops) across 85% of width; 12 rows tall (rows -6 to +6)
-  const U=Math.min(W*0.85/25, H*0.85/14);
+  // Fit: right side = 3(trunk) + 6*2(diag) + 23(stops) ≈ 38; left = 5*2(diag) + 25(stops) = 35
+  const U=Math.min(W*0.85/40, H*0.85/24);
+  U_last=U;
+  const T=TRUNK.length-1; // 3 trunk steps
+
   for(const ln of LINES){
-    const y=ln.row*2*U;
-    for(let i=0;i<ln.stops.length;i++){
-      linePts[ln.id].push({name:ln.stops[i], x:ln.dx*i*U, y});
+    const row=ln.row, y=row*2*U;
+
+    if(ln.trunk_after){
+      // ── Right line ──────────────────────────────────────────────────────
+      // 1. Shared trunk stops at y=0, x=0..T*U
+      for(let i=0;i<TRUNK.length;i++)
+        linePts[ln.id].push({name:TRUNK[i], x:i*U, y:0});
+      // 2. True 45° diagonal: x-span = |row|*2*U to match y-span of |row|*2*U
+      const diagX=(T+Math.abs(row)*2)*U;
+      // 3. Horizontal section: stops at x = diagX + i*U, y = row*2*U
+      for(let i=0;i<ln.trunk_after.length;i++)
+        linePts[ln.id].push({name:ln.trunk_after[i], x:diagX+i*U, y});
+    } else {
+      // ── Left line ───────────────────────────────────────────────────────
+      // 1. Roma Street at (0, 0)
+      linePts[ln.id].push({name:'Roma Street', x:0, y:0});
+      // 2. True 45° diagonal: x-span = row*2*U to match y-span of row*2*U
+      const diagX=row*2*U;
+      // 3. Horizontal section: stops going left from x = -diagX
+      for(let i=0;i<ln.left_stops.length;i++)
+        linePts[ln.id].push({name:ln.left_stops[i], x:-(diagX+i*U), y});
     }
-    for(let i=0;i<ln.stops.length-1;i++){
-      const a=linePts[ln.id][i],b=linePts[ln.id][i+1];
+
+    // Draw segments between consecutive points (includes the 45° diagonal connector)
+    const pts=linePts[ln.id];
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i],b=pts[i+1];
       drawSegs.push({x1:a.x,y1:a.y,x2:b.x,y2:b.y,cols:[ln.col]});
     }
   }
@@ -194,7 +241,7 @@ function buildLayout(W,H){
 // ─────────────────────────────────────────────────────────────────────────────
 function toCanvas(cx,cy){return[cx*vp.scale+vp.x, cy*vp.scale+vp.y];}
 function toContent(px,py){return[(px-vp.x)/vp.scale, (py-vp.y)/vp.scale];}
-function centreRoma(){vp.x=canW/2; vp.y=canH/2;}
+function centreRoma(){vp.x=canW*0.25; vp.y=canH/2;}
 function resetView(){vp={x:0,y:0,scale:1};centreRoma();draw();}
 function zoom(f,px,py){
   const cv=document.getElementById('sch');
@@ -302,31 +349,52 @@ function draw(){
   ctx.globalAlpha=1;
 
   // ── Station dots + labels ───────────────────────────────────────────────
-  // Each line has its own row; draw dots and labels per-line.
-  // Track last label x per row to suppress overlaps.
-  const lblX={};
+  // Draw trunk stops once at y=0, then per-line stops on each row.
+  // Labels suppressed only when too close on the SAME row (screen px gap).
+  const lblX={}, SKIP=new Set(['Roma Street',...TRUNK]);
+
+  // Shared trunk dots + labels (drawn once, multi-colour via lines using them)
+  for(let i=0;i<TRUNK.length;i++){
+    const name=TRUNK[i],x=i*U_last,y=0;
+    const r=(i===0?SR+2:SR*0.7)/vp.scale, lw=1.5/vp.scale;
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle='#1a2535';ctx.fill();ctx.strokeStyle='#c0d4ee';ctx.lineWidth=lw;ctx.stroke();
+    if(i===0)continue; // Roma Street drawn separately below
+    const sx=x*vp.scale+vp.x,sy=y*vp.scale+vp.y;
+    if(sx<-60||sx>canW+60)continue;
+    if(vp.scale<0.3)continue;
+    const lastX=lblX['trunk']??-99999;
+    if(sx-lastX<40)continue;
+    lblX['trunk']=sx;
+    const fs=Math.max(7,8/vp.scale);
+    ctx.fillStyle='#c0d4ee';ctx.font=`${fs}px -apple-system,sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='bottom';
+    const label=name.replace(/\s+[Ss]tation$/i,'');
+    ctx.fillText(label,x,y-r-2/vp.scale);
+  }
+
+  // Per-line stops (horizontal sections + first diagonal stop)
   for(const ln of LINES){
     const pts=linePts[ln.id];
     if(!pts||!pts.length) continue;
-    const isAbove=ln.row<0; // labels above the line for rows above centre
+    const isAbove=ln.row<0;
+    const lastPt=pts[pts.length-1];
     for(let i=0;i<pts.length;i++){
       const{name,x,y}=pts[i];
-      const isTerminus=(i===pts.length-1);
-      const r=(isTerminus?SR+1:SR*0.7)/vp.scale;
-      const lw=1.5/vp.scale;
-      // Dot
+      if(SKIP.has(name)) continue; // trunk drawn separately
+      const isTerminus=(pts[i]===lastPt);
+      const r=(isTerminus?SR+1:SR*0.7)/vp.scale, lw=1.5/vp.scale;
       ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
       if(isTerminus){ctx.fillStyle=ln.col;ctx.fill();ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=lw;ctx.stroke();}
       else{ctx.fillStyle='#111928';ctx.fill();ctx.strokeStyle=ln.col;ctx.lineWidth=lw;ctx.stroke();}
-      // Label (skip Roma Street here — drawn separately)
-      if(name==='Roma Street') continue;
       const sx=x*vp.scale+vp.x, sy=y*vp.scale+vp.y;
       if(sx<-60||sx>canW+60||sy<-30||sy>canH+30) continue;
-      if(!isTerminus&&vp.scale<0.45) continue;
-      const slotKey=`${ln.id}`;
+      // Show all station labels when zoomed in; suppress middle stations when zoomed out
+      if(!isTerminus&&vp.scale<0.35) continue;
+      const slotKey=ln.id;
       const lastX=lblX[slotKey]??-99999;
-      const minGap=isTerminus?28:52;
-      if(!isTerminus&&(sx-lastX)<minGap) continue;
+      const minGap=isTerminus?20:38;
+      if(!isTerminus&&Math.abs(sx-lastX)<minGap) continue;
       lblX[slotKey]=sx;
       const fs=Math.max(7,(isTerminus?9.5:8)/vp.scale);
       ctx.fillStyle=isTerminus?ln.col:'#4a6888';
@@ -338,14 +406,14 @@ function draw(){
     }
   }
 
-  // ── Roma Street hub (vertical bar connecting all lines) ──────────────────
+  // ── Roma Street hub ─────────────────────────────────────────────────────
   {
-    const r=8/vp.scale,lw=2/vp.scale;
+    const r=10/vp.scale,lw=2/vp.scale;
     ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);
     ctx.fillStyle='#1a2535';ctx.fill();ctx.strokeStyle='#ffffff';ctx.lineWidth=lw;ctx.stroke();
-    if(vp.scale>0.2){
+    if(vp.scale>0.15){
       ctx.fillStyle='#fff';
-      ctx.font=`bold ${Math.max(7,8/vp.scale)}px -apple-system,sans-serif`;
+      ctx.font=`bold ${Math.max(7,9/vp.scale)}px -apple-system,sans-serif`;
       ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText('Roma St',0,0);
     }

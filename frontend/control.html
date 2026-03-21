@@ -113,32 +113,32 @@ document.getElementById('mapbtn').onclick = () => location.href = API_BASE.repla
 // ─────────────────────────────────────────────────────────────────────────────
 // COLOURS
 // ─────────────────────────────────────────────────────────────────────────────
-const RMAP = {};
-const CRULES = [
-  {k:'SH',c:'#00aeef'},{k:'SP',c:'#1c63b7'},{k:'VL',c:'#f5a400'},
-  {k:'RW',c:'#f47920'},{k:'FG',c:'#e3000f'},{k:'DO',c:'#e0007f'},
-  {k:'AP',c:'#6b21a8'},{k:'CL',c:'#ffd600'},{k:'BE',c:'#6fbe44'},
-  {k:'CA',c:'#7b2d8b'},{k:'NA',c:'#7b2d8b'},{k:'KP',c:'#00b5cc'},
-  {k:'IP',c:'#f47920'},{k:'RP',c:'#00b5cc'},{k:'IM',c:'#6fbe44'},
-];
+const LINE_COLOURS = {
+  red:'#e3000f', green:'#007b40', gold:'#f5a400', blue:'#00aeef', purple:'#7b2d8b',
+};
+const ROUTE_COLOUR_TABLE = {
+  FGBR:'red',BRFG:'red',BNFG:'red',FGBN:'red',BRBR:'red',BNBN:'red',
+  BNBR:'red',BRBN:'red',BDBN:'red',BNBD:'red',
+  BDVL:'gold',VLBD:'gold',BNVL:'gold',VLBN:'gold',BRVL:'gold',VLBR:'gold',
+  BRAP:'gold',APBR:'gold',BNAP:'gold',APBN:'gold',BDAP:'gold',APBD:'gold',BRBD:'gold',BDBR:'gold',DBBR:'gold',
+  BRSH:'blue',SHBR:'blue',BNSH:'blue',SHBN:'blue',BDSH:'blue',SHBD:'blue',
+  RPSP:'blue',SPRP:'blue',BRSP:'blue',SPBR:'blue',BNSP:'blue',SPBN:'blue',
+  BRDB:'purple',DBBN:'purple',BRCL:'purple',CLBR:'purple',BNCL:'purple',CLBN:'purple',
+  BDCA:'green',CABD:'green',BNCA:'green',CABN:'green',BRCA:'green',CABR:'green',
+  BRGY:'green',GYBR:'green',IPCA:'green',CAIP:'green',
+  IPNA:'green',NAIP:'green',IPRW:'green',RWIP:'green',
+  BRRW:'green',RWBR:'green',RPBR:'green',BRRP:'green',
+};
+const PFX2 = {
+  FG:'red',BE:'red',VL:'gold',AP:'gold',SH:'blue',SP:'blue',
+  DO:'purple',CL:'purple',CA:'green',NA:'green',GY:'green',
+  IP:'green',RW:'green',RP:'green',KP:'green',IM:'green',
+};
 function lc(rid){
   if(!rid)return'#5a6478';
-  if(RMAP[rid])return RMAP[rid];
-  const u=rid.toUpperCase();
-  for(const{k,c}of CRULES)if(u.includes(k))return c;
-  return'#7a8899';
-}
-async function loadColours(){
-  const retry=async()=>{
-    try{
-      const[r1,r2]=await Promise.all([fetch(API_BASE+'/debug/routes'),fetch(API_BASE+'/debug/live')]);
-      const[d1,d2]=await Promise.all([r1.json(),r2.json()]);
-      let n=0;
-      for(const rt of(d1.gtfs_routes||[])){const c=rt.gtfs_color||rt.computed_colour;if(c&&c!=='#5bb8ff'){RMAP[rt.route_id]=c;n++;}}
-      for(const rt of(d2.live_route_ids||[])){const c=rt.gtfs_colour||rt.computed_colour;if(c&&c!=='#5bb8ff')RMAP[rt.route_id]=c;}
-      if(!n)setTimeout(retry,5000);
-    }catch{setTimeout(retry,6000);}
-  };retry();
+  const code=rid.toUpperCase().split('-')[0];
+  const name=ROUTE_COLOUR_TABLE[code]||PFX2[code.slice(0,2)];
+  return name?LINE_COLOURS[name]:'#7a8899';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -154,19 +154,13 @@ async function loadColours(){
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Colours
+// Official Translink SEQ line colours (matches backend line_colour())
 const C = {
-  CAB:'#7b2d8b', KCL:'#00b5cc', SHO:'#00aeef', AIR:'#6b21a8',
-  DOO:'#e0007f', FER:'#e3000f', BEL:'#6fbe44', GOL:'#f5a400',
-  CLV:'#ffd600', IPL:'#f47920', SPR:'#1c63b7',
+  CAB:'#007b40', KCL:'#007b40', SHO:'#00aeef', AIR:'#f5a400',
+  DOO:'#7b2d8b', FER:'#e3000f', BEL:'#e3000f', GOL:'#f5a400',
+  CLV:'#7b2d8b', IPL:'#007b40', SPR:'#00aeef',
 };
 
-// Utility: blend two hex colours
-function blend(a,b){
-  const p=v=>parseInt(v,16);
-  const r1=p(a.slice(1,3)),g1=p(a.slice(3,5)),b1=p(a.slice(5,7));
-  const r2=p(b.slice(1,3)),g2=p(b.slice(3,5)),b2=p(b.slice(5,7));
-  return`#${Math.round((r1+r2)/2).toString(16).padStart(2,'0')}${Math.round((g1+g2)/2).toString(16).padStart(2,'0')}${Math.round((b1+b2)/2).toString(16).padStart(2,'0')}`;
-}
 
 //
 // TREE DEFINITION
@@ -541,8 +535,7 @@ function draw(){
     // Segments above Roma (negative y in content) → label above
     // Segments below (positive y) → label below
     // Main corridor (y≈0) → alternate based on x bucket
-    const ybucket=Math.round(pos.y/(vp.scale>0?1:1)*4)/4; // y in content units
-    const contentY=pos.y; // content y
+    const contentY=pos.y;
     let above;
     if(contentY<-0.5)      above=true;
     else if(contentY>0.5)  above=false;
@@ -578,7 +571,7 @@ function draw(){
 
   // ── Trains ────────────────────────────────────────────────────────────────
   for(const v of vehicles){
-    const pos=trainPos(v),col=lc(v.route_id);
+    const pos=trainPos(v),col=v.colour||lc(v.route_id);
     const sel=selType==='train'&&selId===v.id;
     const delay=v.delay_seconds||0;
     const TW=(sel?34:26)/vp.scale, TH=(sel?14:10)/vp.scale, rx=2.5/vp.scale;
@@ -677,7 +670,7 @@ function showTrain(v){
   const st=v.current_stop_name?(v.current_status==='STOPPED_AT'?'At ':'To ')+v.current_stop_name.replace(/,?\s*[Pp]latform\s*\d+\s*$/,'').replace(/\s+[Ss]tation$/i,''):v.current_status?.replace(/_/g,' ')||'—';
   document.getElementById('sel-hdr').innerHTML=`
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
-      <div style="width:10px;height:10px;border-radius:2px;background:${lc(v.route_id)}"></div>
+      <div style="width:10px;height:10px;border-radius:2px;background:${v.colour||lc(v.route_id)}"></div>
       <div style="font-weight:700;font-size:11px;color:#e8f0fa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.route_id||'—'} → ${v.headsign||'—'}</div>
     </div>
     ${mkrows([['Train',v.label||v.id,''],['Status',st,''],['Delay',ds,dc],['Speed',v.speed?v.speed+' km/h':'—',''],['Heading',hd,'']])}`;
@@ -700,7 +693,7 @@ function showStation(name){
     const sn=nn(s.stop_name||'');
     if(sn===ns||sn.startsWith(ns.split(' ')[0])||ns.startsWith(sn.split(' ')[0])){
       const delay=s.arrival_delay||0;
-      arr.push({vid:v.id,route_id:v.route_id,headsign:v.headsign||v.label,delay,arr_time:(s.arrival_time||0)+delay,col:lc(v.route_id)});
+      arr.push({vid:v.id,route_id:v.route_id,headsign:v.headsign||v.label,delay,arr_time:(s.arrival_time||0)+delay,col:v.colour||lc(v.route_id)});
     }
   }
   arr.sort((a,b)=>(a.arr_time||0)-(b.arr_time||0));
@@ -726,7 +719,7 @@ function renderList(){
   const s=[...vehicles].filter(v=>!q||(v.route_id||'').toLowerCase().includes(q)||(v.headsign||'').toLowerCase().includes(q)||(v.line_name||'').toLowerCase().includes(q)).sort((a,b)=>(b.delay_seconds||0)-(a.delay_seconds||0));
   const dc=d=>d>60?'late':d<-30?'early':'ok',dl=d=>d>60?`+${Math.round(d/60)}m`:d<-30?`${Math.round(d/60)}m`:'On time';
   document.getElementById('tlist').innerHTML=s.length?s.map(v=>{
-    const d=v.delay_seconds||0,sel=selType==='train'&&selId===v.id,bc=lc(v.route_id);
+    const d=v.delay_seconds||0,sel=selType==='train'&&selId===v.id,bc=v.colour||lc(v.route_id);
     return`<div class="en ${sel?'sel':''}" onclick="selectTrain('${v.id}')">
       <div class="et">
         <span class="rb" style="background:${bc}">${(v.headsign||v.route_id||'—').replace(/\s+[Ss]tation$/i,'').slice(0,18)}</span>
@@ -764,7 +757,7 @@ function resize(){
   buildLayout(canW,canH);centreRoma();draw();
 }
 window.addEventListener('resize',resize);
-loadColours();resize();refresh().then(()=>animLoop());setInterval(refresh,15000);
+resize();refresh().then(()=>animLoop());setInterval(refresh,15000);
 
 // ── Sidebar toggle ─────────────────────────────────────────────────────────
 function toggleSidebar(){

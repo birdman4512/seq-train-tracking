@@ -181,22 +181,7 @@
     .train-card:hover { border-color: #3d7ab8; background: #162436; }
     .train-card.selected { border-color: #e63946; background: #1a1015; }
 
-    .train-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 5px;
-    }
 
-    .route-badge {
-      background: #e63946;
-      color: #fff;
-      border-radius: 4px;
-      padding: 2px 8px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
 
     .delay-badge {
       font-size: 0.7rem;
@@ -208,29 +193,7 @@
     .delay-late     { background: #7f1d1d; color: #fca5a5; }
     .delay-early    { background: #1e3a8a; color: #93c5fd; }
 
-    .train-info { font-size: 0.72rem; color: #7a9ab8; }
-    .train-info strong { color: #c0d0e0; }
 
-    .speed-indicator {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.7rem;
-      margin-top: 4px;
-    }
-
-    .speed-bar-bg {
-      flex: 1; height: 4px;
-      background: #1e3a5a;
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .speed-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #22c55e, #e63946);
-      border-radius: 2px;
-      transition: width 0.5s;
-    }
 
     /* Alerts tab */
     .alerts-list { overflow-y: auto; flex: 1; padding: 8px; }
@@ -461,7 +424,7 @@
     <!-- Trains tab -->
     <div class="tab-content active" id="tab-trains">
       <div class="search-box">
-        <input type="text" id="search-input" placeholder="Search line, destination…" oninput="filterTrains()" />
+        <input type="text" id="search-input" placeholder="Search line, destination…" oninput="renderTrainList()" />
       </div>
       <div class="train-list" id="train-list">
         <div class="no-data">Loading train data…</div>
@@ -510,46 +473,111 @@ const REFRESH_MS   = 15000;  // match backend poll interval
 const SEQ_CENTRE   = [-27.47, 153.02]; // Brisbane
 
 // ── State ────────────────────────────────────────────────────────────────────
-let map, markersLayer, routeLayer, shapesLayer, stationsLayer;
-let shapesLoaded = false;
+let map, markersLayer, shapesLayer, stationsLayer;
 let vehicles        = [];
 let selectedId      = null;
 let showLabels      = false;
 let autoRefresh     = true;
 let refreshTimer    = null;
 let markerObjects   = {};
-let stationsLoaded  = false;
 
-// Smooth position interpolation — trains glide to new positions
-// animPos[id] = {lat, lon}  (current rendered position, lerped toward target)
-const animPos  = {};
-const LERP_SPEED = 0.08; // fraction of distance to close per frame (~15fps)
-let   animFrame = null;
+// ── Animation state per train ────────────────────────────────────────────────
+const animState = {};
+const STALE_THRESHOLD = 120; // seconds stopped before red ring
+let animFrame = null;
+let lastTick  = null;
 
 function startAnimLoop() {
-  if (animFrame) return; // already running
-  function tick() {
-    let anyMoving = false;
+  if (animFrame) return;
+  function tick(ts) {
+    const dt = lastTick ? Math.min((ts - lastTick) / 1000, 0.5) : 0.016;
+    lastTick = ts;
+
+    const now = Date.now() / 1000;
+
     for (const v of vehicles) {
-      const target = {lat: v.lat, lon: v.lon};
-      if (!animPos[v.id]) {
-        animPos[v.id] = {...target};
-        continue;
+      let s = animState[v.id];
+
+      // ── Initialise on first sight ─────────────────────────────
+      if (!s) {
+        s = animState[v.id] = {
+          lat: v.lat, lon: v.lon,
+          fromLat: v.lat, fromLon: v.lon,
+          toLat: v.lat, toLon: v.lon,
+          progress: 1, speed: 0,
+          stoppedAt: null,
+          staleRing: false,
+          stationaryPolls: 0,
+          lastGPS: {lat: v.lat, lon: v.lon},
+          lastPollTime: 0,
+        };
       }
-      const cur = animPos[v.id];
-      const dLat = target.lat - cur.lat;
-      const dLon = target.lon - cur.lon;
-      const dist  = Math.abs(dLat) + Math.abs(dLon);
-      if (dist > 0.000001) {
-        cur.lat += dLat * LERP_SPEED;
-        cur.lon += dLon * LERP_SPEED;
-        anyMoving = true;
-        // Update marker position smoothly
-        if (markerObjects[v.id]) {
-          markerObjects[v.id].setLatLng([cur.lat, cur.lon]);
+
+      // Detect if GPS position changed (new data arrived from server poll)
+      const isNewPoll = (v._pollTime || 0) > (s.lastPollTime || 0);
+      if (isNewPoll) {
+        s.lastPollTime = v._pollTime || now;
+        const gpsMoved = Math.hypot(v.lat - s.lastGPS.lat, v.lon - s.lastGPS.lon) > 0.0002;
+        if (gpsMoved) {
+          // GPS moved — train is running normally
+          s.fromLat = s.lastGPS.lat; s.fromLon = s.lastGPS.lon;
+          s.toLat   = v.lat;         s.toLon   = v.lon;
+          s.progress = 0;
+          s.stoppedAt = null;
+          s.staleRing = false;
+          s.stationaryPolls = 0;
+          s.lastGPS = {lat: v.lat, lon: v.lon};
+        } else {
+          // GPS unchanged this poll
+          s.stationaryPolls = (s.stationaryPolls || 0) + 1;
+          // Only flag stale if:
+          // 1. Train is NOT officially at a station
+          // 2. GPS hasn't moved for at least 3 consecutive polls (~45s)
+          // 3. Total stopped time exceeds threshold
+          const atStation = v.current_status === 'STOPPED_AT';
+          if (atStation) {
+            // Normal station dwell — reset everything
+            s.stoppedAt = null;
+            s.staleRing = false;
+            s.stationaryPolls = 0;
+          } else if (s.stationaryPolls >= 3) {
+            if (!s.stoppedAt) s.stoppedAt = now;
+            s.staleRing = (now - s.stoppedAt) > STALE_THRESHOLD;
+          }
+        }
+      }
+
+      // ── Animate position ──────────────────────────────────────
+      const dist = Math.hypot(s.toLat - s.fromLat, s.toLon - s.fromLon);
+
+      if (v.current_status === 'STOPPED_AT') {
+        // Snap to GPS when officially stopped at a station
+        s.lat = v.lat; s.lon = v.lon;
+        s.progress = 1;
+      } else if (dist > 0.00002 && s.progress < 1) {
+        // Move at constant speed — arrive just before next poll so there's no pause
+        // Target: cover the distance in 13s (poll is 15s, leave 2s buffer)
+        const step = dt / 13;
+        s.progress = Math.min(1, s.progress + step);
+        s.lat = s.fromLat + (s.toLat - s.fromLat) * s.progress;
+        s.lon = s.fromLon + (s.toLon - s.fromLon) * s.progress;
+      } else {
+        s.lat = s.toLat; s.lon = s.toLon;
+      }
+
+      // ── Stale ring is evaluated inside the isNewPoll block above ──────────
+
+      if (markerObjects[v.id]) {
+        markerObjects[v.id].setLatLng([s.lat, s.lon]);
+        // Update icon if stale state changed (to show/hide red ring)
+        const marker = markerObjects[v.id];
+        if (marker._staleRing !== s.staleRing) {
+          marker._staleRing = s.staleRing;
+          marker.setIcon(createMarkerIcon(v, v.id === selectedId));
         }
       }
     }
+
     animFrame = requestAnimationFrame(tick);
   }
   animFrame = requestAnimationFrame(tick);
@@ -562,6 +590,16 @@ function initMap() {
     zoom: 11,
     zoomControl: true,
   });
+  map.on('click', () => {
+    if (selectedId) {
+      selectedId = null;
+      for (const v of vehicles) {
+        if (markerObjects[v.id]) markerObjects[v.id].setIcon(createMarkerIcon(v, false));
+      }
+      document.getElementById('info-panel')?.classList.remove('visible');
+      renderTrainList();
+    }
+  });
 
   // OpenStreetMap tile layer (works great with dark CSS filter)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -573,17 +611,16 @@ function initMap() {
   shapesLayer = L.geoJSON(null, {
     style: function(feature) {
       return {
-        color:     feature.properties?.colour || '#5bb8ff',
-        weight:    3,
-        opacity:   0.8,
-        lineCap:   'round',
-        lineJoin:  'round',
+        color:   feature.properties?.colour || '#336688',
+        weight:  3,
+        opacity: 0.85,
+        lineCap: 'round',
+        lineJoin:'round',
       };
     }
   }).addTo(map);
 
   markersLayer  = L.layerGroup().addTo(map);
-  routeLayer    = L.layerGroup().addTo(map);
   stationsLayer = L.layerGroup().addTo(map);
 }
 
@@ -600,7 +637,6 @@ async function loadShapes() {
     }
     shapesLayer.clearLayers();
     shapesLayer.addData(geojson);
-    shapesLoaded = true;
     console.log(`Track shapes loaded: ${geojson.segment_count} segments, sample colour: ${geojson.features[0]?.properties?.colour}`);
   } catch(e) {
     console.warn('Failed to load track shapes:', e);
@@ -631,7 +667,6 @@ async function loadStations() {
       marker.on('click', () => showStationPopup(st));
       stationsLayer.addLayer(marker);
     }
-    stationsLoaded = true;
     // Schedule re-fetch to get updated arrivals every 30s
     setTimeout(loadStations, 30000);
   } catch(e) {
@@ -648,9 +683,7 @@ function fmtTime(unixSec) {
 function minsUntil(unixSec) {
   if (!unixSec) return '';
   const mins = Math.round((unixSec - Date.now()/1000) / 60);
-  if (mins <= 0)  return 'Now';
-  if (mins === 1) return '1 min';
-  return `${mins} mins`;
+  return mins <= 0 ? 'Now' : `${mins}m`;
 }
 
 // Highlight a train on the map by trip_id — pan to it and select it
@@ -667,44 +700,96 @@ function highlightTrainByTripId(tripId) {
   map.panTo([v.lat, v.lon], {animate: true, duration: 0.8});
 }
 
-function showStationPopup(st) {
-  const arrivals = st.arrivals || [];
+function arrivalRow(a) {
+  const bc = lineColour(a.route_id);
+  const mins = minsUntil(a.arrival_time);
+  const time = fmtTime(a.arrival_time);
+  const ds = !a.delay ? 'On time' : a.delay > 0
+    ? `+${Math.round(a.delay/60)}m late`
+    : `${Math.abs(Math.round(a.delay/60))}m early`;
+  const delayCol = a.delay > 60 ? '#ff6644' : a.delay < -30 ? '#44aaff' : '#44dd88';
+  const minsCol  = mins === 'Now' ? '#ff8844' : '#c8d0dc';
+  return `<div onclick="highlightTrainByTripId('${a.trip_id}')"
+    style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #2a3040;font-size:11px;cursor:pointer;border-radius:3px"
+    onmouseover="this.style.background='#1e2a38'" onmouseout="this.style.background=''">
+    <div style="width:32px;height:16px;border-radius:3px;background:${bc};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0">${(a.route_id||'').slice(0,3)}</div>
+    <div style="flex:1;color:#c8d0dc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.headsign||'—'}</div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0">
+      <div style="color:${minsCol};font-weight:600;font-size:11px">${mins}</div>
+      <div style="color:#4a5a6a;font-size:9px">${time}</div>
+      <div style="color:${delayCol};font-size:9px">${ds}</div>
+    </div>
+  </div>`;
+}
 
-  const rows = arrivals.slice(0,6).map(a => {
-    const bc   = lineColour(a.route_id);
-    const mins = minsUntil(a.arrival_time);
-    const time = fmtTime(a.arrival_time);
-    const ds   = !a.delay ? 'On time' : a.delay > 0
-      ? `+${Math.round(a.delay/60)}m late`
-      : `${Math.abs(Math.round(a.delay/60))}m early`;
-    const delayCol = a.delay > 60 ? '#ff6644' : a.delay < -30 ? '#44aaff' : '#44dd88';
-    const minsCol  = mins === 'Now' ? '#ff8844' : '#c8d0dc';
-    return `<div
-      onclick="highlightTrainByTripId('${a.trip_id}')"
-      style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #2a3040;font-size:11px;cursor:pointer;transition:background .15s;border-radius:3px"
-      onmouseover="this.style.background='#1e2a38'" onmouseout="this.style.background=''"
-    >
-      <div style="width:32px;height:16px;border-radius:3px;background:${bc};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0">${(a.route_id||'').slice(0,3)}</div>
-      <div style="flex:1;color:#c8d0dc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.headsign||'—'}</div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0">
-        <div style="color:${minsCol};font-weight:600;font-size:11px">${mins}</div>
-        <div style="color:#4a5a6a;font-size:9px">${time}</div>
-        <div style="color:${delayCol};font-size:9px">${ds}</div>
+function showStationPopup(st) {
+  // Flatten all arrivals across platforms, sorted by arrival time
+  const arrivals = (st.arrivals || []).slice(0, 8);
+
+  const rows = arrivals.map(a => {
+    const bc      = lineColour(a.route_id);
+    const arrTime = a.arrival_time;
+    const depTime = a.departure_time || a.arrival_time;
+    const arrMins = minsUntil(arrTime);
+    const depMins = minsUntil(depTime);
+    const now     = Date.now() / 1000;
+
+    // Determine if train is arriving, at platform, or departing
+    let statusLabel, statusCol, timeLabel;
+    if (arrTime > now + 30) {
+      statusLabel = 'Arriving';
+      statusCol   = '#60a8f0';
+      timeLabel   = arrMins;
+    } else if (depTime > now) {
+      statusLabel = 'At platform';
+      statusCol   = '#44dd88';
+      timeLabel   = `Dep ${depMins}`;
+    } else {
+      statusLabel = 'Departing';
+      statusCol   = '#f09040';
+      timeLabel   = 'Now';
+    }
+
+    const ds = !a.delay ? '' : Math.abs(a.delay) < 60 ? '' :
+      a.delay > 0 ? `+${Math.round(a.delay/60)}m` : `${Math.round(a.delay/60)}m`;
+    const delayCol = a.delay > 60 ? '#ff6644' : a.delay < -60 ? '#44aaff' : '#44dd88';
+
+    const platBadge = a.platform
+      ? `<span style="background:#1e3a5a;border:1px solid #2d5a8a;border-radius:2px;padding:0 5px;font-size:8px;font-weight:700;color:#7ab8f5;white-space:nowrap">${a.platform}</span>`
+      : '';
+
+    return `<div onclick="highlightTrainByTripId('${a.trip_id}')"
+      style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid #1e2530;cursor:pointer;border-radius:3px"
+      onmouseover="this.style.background='#1e2a38'" onmouseout="this.style.background=''">
+      <div style="width:30px;height:15px;border-radius:3px;background:${bc};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0">${(a.route_id||'').slice(0,3)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:11px;color:#c8d0dc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.headsign||'—'}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
+          <span style="font-size:9px;font-weight:600;color:${statusCol}">${statusLabel}</span>
+          ${platBadge}
+          ${ds ? `<span style="font-size:9px;color:${delayCol}">${ds}</span>` : ''}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;font-weight:700;color:#c8d0dc">${timeLabel}</div>
+        <div style="font-size:9px;color:#4a5a6a">${fmtTime(arrTime)}</div>
       </div>
     </div>`;
   }).join('');
 
-  const html = `<div style="min-width:260px;background:#161a20;border-radius:6px;padding:0;overflow:hidden;font-family:-apple-system,sans-serif">
-    <div style="background:#1c2128;padding:8px 12px;font-weight:600;font-size:13px;color:#fff;border-bottom:1px solid #252d3a">
-      🚉 ${st.stop_name}
+  const html = `<div style="min-width:280px;max-width:380px;background:#161a20;border-radius:6px;padding:0;overflow:hidden;font-family:-apple-system,sans-serif">
+    <div style="background:#1c2128;padding:8px 12px;border-bottom:1px solid #252d3a">
+      <div style="font-weight:600;font-size:13px;color:#fff">🚉 ${st.stop_name}</div>
+      <div style="font-size:9px;color:#4a6888;margin-top:2px;text-transform:uppercase;letter-spacing:0.8px">Click a train to track it</div>
     </div>
-    <div style="padding:4px 10px 8px">
-      <div style="font-size:9px;color:#4a5568;text-transform:uppercase;letter-spacing:1px;padding:6px 0 2px">Next Arrivals — click to track</div>
-      ${rows || '<div style="color:#4a5568;font-size:11px;padding:8px 0">No arrivals found</div>'}
+    <div style="padding:2px 10px 8px;max-height:420px;overflow-y:auto">
+      ${rows || '<div style="color:#4a5568;font-size:11px;padding:12px 0;text-align:center">No upcoming trains</div>'}
     </div>
   </div>`;
 
-  L.popup({ maxWidth: 320, className: 'station-popup' })
+  L.popup({ maxWidth: 400, className: 'station-popup' })
     .setLatLng([st.lat, st.lon])
     .setContent(html)
     .openOn(map);
@@ -712,134 +797,65 @@ function showStationPopup(st) {
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
 async function fetchVehicles() {
-  try {
-    const r = await fetch(`${API_BASE}/vehicles`);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
-    return data;
-  } catch(e) {
-    console.error('Failed to fetch vehicles:', e);
-    throw e;
-  }
+  const r = await fetch(`${API_BASE}/vehicles`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
 }
 
 async function fetchAlerts() {
   try {
     const r = await fetch(`${API_BASE}/alerts`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return await r.json();
-  } catch(e) {
-    console.error('Failed to fetch alerts:', e);
-    return { alerts: [] };
-  }
+    return r.json();
+  } catch { return { alerts: [] }; }
 }
 
 // ── Delay helpers ─────────────────────────────────────────────────────────────
-function delayClass(sec) {
-  if (sec === null || sec === undefined) return 'on-time';
-  if (sec > 60)  return 'late';
-  if (sec < -30) return 'early';
-  return 'on-time';
-}
-
 function delayLabel(sec) {
-  if (sec === null || sec === undefined || sec === 0) return 'On Time';
+  if (!sec) return 'On Time';
   if (sec > 0) return `+${Math.round(sec/60)}m late`;
   return `${Math.abs(Math.round(sec/60))}m early`;
 }
 
 function delayBadgeClass(sec) {
-  const c = delayClass(sec);
-  return c === 'late' ? 'delay-late' : c === 'early' ? 'delay-early' : 'delay-on-time';
+  if (sec > 60)  return 'delay-late';
+  if (sec < -30) return 'delay-early';
+  return 'delay-on-time';
 }
 
 // ── Route colour lookup — populated dynamically from GTFS routes.txt ────────
 // Fallback static rules while the live map loads
 // Translink actual format: SHBR-4727 (2-letter line + 2-letter dest + trip number)
-const LINE_COLOUR_RULES = [
-  // 2-letter line prefixes (primary — these match the live feed)
-  {k:'SH', c:'#00aeef'}, // Shorncliffe
-  {k:'SP', c:'#1c63b7'}, // Springfield
-  {k:'VL', c:'#f5a400'}, // Varsity Lakes / Gold Coast
-  {k:'RW', c:'#f47920'}, // Rosewood / Ipswich
-  {k:'FG', c:'#e3000f'}, // Ferny Grove
-  {k:'DO', c:'#e0007f'}, // Doomben
-  {k:'AP', c:'#6b21a8'}, // Airport
-  {k:'CL', c:'#ffd600'}, // Cleveland
-  {k:'BE', c:'#6fbe44'}, // Beenleigh
-  {k:'CA', c:'#7b2d8b'}, // Caboolture
-  {k:'NA', c:'#7b2d8b'}, // Nambour
-  {k:'KP', c:'#00b5cc'}, // Kippa-Ring
-  {k:'IP', c:'#f47920'}, // Ipswich
-  {k:'RP', c:'#00b5cc'}, // Redcliffe
-  {k:'GL', c:'#f5a400'}, // Gold Coast alt
-  {k:'IM', c:'#6fbe44'}, // Inner Metro
-  // BN-prefix format
-  {k:'BNFG',c:'#e3000f'},{k:'BNCAB',c:'#7b2d8b'},{k:'BNKCL',c:'#00b5cc'},
-  {k:'BNIPL',c:'#f47920'},{k:'BNSPR',c:'#1c63b7'},{k:'BNBEL',c:'#6fbe44'},
-  {k:'BNCLV',c:'#ffd600'},{k:'BNGOL',c:'#f5a400'},{k:'BNSH', c:'#00aeef'},
-  {k:'BNAIR',c:'#6b21a8'},{k:'BNDOO',c:'#e0007f'},{k:'BNNAI',c:'#7b2d8b'},
-  // Short fallbacks
-  {k:'FER',c:'#e3000f'},{k:'CAB',c:'#7b2d8b'},{k:'KCL',c:'#00b5cc'},
-  {k:'IPL',c:'#f47920'},{k:'SPR',c:'#1c63b7'},{k:'BEL',c:'#6fbe44'},
-  {k:'CLV',c:'#ffd600'},{k:'GOL',c:'#f5a400'},{k:'SHO',c:'#00aeef'},
-  {k:'AIR',c:'#6b21a8'},{k:'DOO',c:'#e0007f'},{k:'IMU',c:'#6fbe44'},
-  {k:'NAI',c:'#7b2d8b'},{k:'ROS',c:'#f47920'},{k:'BAN',c:'#6b21a8'},
-];
+// Colour rules — handles both prefix-based (SHBR-4727) and 3-letter (BRF, SPR) route_ids
+// Route ID format confirmed from GTFS debug/routes API
+// Colour lookup — backend sends v.colour for vehicles (authoritative).
+// lineColour() is only used as fallback for station popups that have route_id only.
+// Map: keywords in GTFS route name → colour
+// route_id 4-letter code → hex colour (fallback for station popups lacking v.colour)
+// v.colour from backend is the primary source; this is only used for arrival rows
+const R='#e3000f',G='#007b40',O='#f5a400',B='#00aeef',P='#7b2d8b';
+const ROUTE_COLOUR_TABLE = {
+  FGBR:R,BRFG:R,BNFG:R,FGBN:R,BRBR:R,BNBN:R,BNBR:R,BRBN:R,BDBN:R,BNBD:R,
+  BDVL:O,VLBD:O,BNVL:O,VLBN:O,BRVL:O,VLBR:O,
+  BRAP:O,APBR:O,BNAP:O,APBN:O,BDAP:O,APBD:O,BRBD:O,BDBR:O,DBBR:O,
+  BRSH:B,SHBR:B,BNSH:B,SHBN:B,BDSH:B,SHBD:B,
+  RPSP:B,SPRP:B,BRSP:B,SPBR:B,BNSP:B,SPBN:B,
+  BRDB:P,DBBN:P,BRCL:P,CLBR:P,BNCL:P,CLBN:P,
+  BDCA:G,CABD:G,BNCA:G,CABN:G,BRCA:G,CABR:G,BRGY:G,GYBR:G,
+  IPCA:G,CAIP:G,IPNA:G,NAIP:G,IPRW:G,RWIP:G,BRRW:G,RWBR:G,RPBR:G,BRRP:G,
+};
 
-// Live map: route_id -> hex colour, fetched from backend GTFS data
-const ROUTE_COLOUR_MAP = {};
-
-async function loadRouteColours() {
-  // Also try the live debug endpoint which cross-references realtime route_ids
-  const tryLoad = async () => {
-    try {
-      // Load from static GTFS routes
-      const r1 = await fetch(API_BASE+'/debug/routes');
-      const d1 = await r1.json();
-      let loaded = 0;
-      for (const route of (d1.gtfs_routes || [])) {
-        const col = route.gtfs_color || route.computed_colour;
-        if (col && col !== '#5bb8ff') {
-          ROUTE_COLOUR_MAP[route.route_id] = col;
-          loaded++;
-        }
-      }
-      // Also load live route_id -> colour mapping
-      const r2 = await fetch(API_BASE+'/debug/live');
-      const d2 = await r2.json();
-      for (const rt of (d2.live_route_ids || [])) {
-        const col = rt.gtfs_colour || rt.computed_colour;
-        if (col && col !== '#5bb8ff') {
-          ROUTE_COLOUR_MAP[rt.route_id] = col;
-        }
-      }
-      console.log(`Route colour map: ${Object.keys(ROUTE_COLOUR_MAP).length} entries. Sample:`,
-        Object.entries(ROUTE_COLOUR_MAP).slice(0,4));
-      if (loaded === 0) {
-        // GTFS not loaded yet, retry in 5s
-        setTimeout(tryLoad, 5000);
-      }
-    } catch(e) {
-      console.warn('Route colour load failed:', e);
-      setTimeout(tryLoad, 5000);
-    }
-  };
-  tryLoad();
-}
-
+const _lcCache = {};
 const _lcLogged = new Set();
+
+const PFX2={FG:R,BE:R,VL:O,AP:O,SH:B,SP:B,DO:P,CL:P,CA:G,NA:G,GY:G,IP:G,RW:G,RP:G,KP:G,IM:G};
 function lineColour(routeId) {
   if (!routeId) return '#888888';
-  // 1. Exact match from live GTFS data
-  if (ROUTE_COLOUR_MAP[routeId]) return ROUTE_COLOUR_MAP[routeId];
-  // 2. Substring match against known keywords
-  const upper = routeId.toUpperCase();
-  for (const {k, c} of LINE_COLOUR_RULES) {
-    if (upper.includes(k)) return c;
-  }
-  if (!_lcLogged.has(upper)) { console.log('Unknown route_id (no colour):', routeId); _lcLogged.add(upper); }
-  return '#7a8899';
+  if (_lcCache[routeId]) return _lcCache[routeId];
+  const code = routeId.toUpperCase().split('-')[0];
+  const c = ROUTE_COLOUR_TABLE[code] || PFX2[code.slice(0,2)];
+  if (!c && !_lcLogged.has(code)) { console.log('Unknown route colour:', routeId); _lcLogged.add(code); }
+  return (_lcCache[routeId] = c || '#7a8899');
 }
 
 // ── Marker creation (SVG — bearing arrow is rotated inside SVG, no CSS conflicts) ──
@@ -847,10 +863,11 @@ function lineColour(routeId) {
 // immune to Leaflet's DOM transform interference.
 function createMarkerIcon(vehicle, selected) {
   const bearing = (vehicle.bearing || 0) * Math.PI / 180;  // radians
-  const colour  = lineColour(vehicle.route_id);
+  const colour  = (vehicle.colour || lineColour(vehicle.route_id));
   const size    = selected ? 48 : 40;
   const r       = selected ? 13 : 11;
   const label   = (vehicle.route_id || '').slice(0, 3);
+  const stale   = animState[vehicle.id]?.staleRing || false;
 
   const canvas  = document.createElement('canvas');
   canvas.width  = size;
@@ -886,8 +903,8 @@ function createMarkerIcon(vehicle, selected) {
   // Circle border
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.strokeStyle = selected ? '#fbbf24' : 'rgba(255,255,255,0.6)';
-  ctx.lineWidth   = selected ? 3 : 1.5;
+  ctx.strokeStyle = selected ? '#fbbf24' : stale ? '#ff3333' : 'rgba(255,255,255,0.6)';
+  ctx.lineWidth   = selected ? 3 : stale ? 2.5 : 1.5;
   ctx.stroke();
 
   // Selected glow ring
@@ -896,6 +913,15 @@ function createMarkerIcon(vehicle, selected) {
     ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(251,191,36,0.4)';
     ctx.lineWidth   = 3;
+    ctx.stroke();
+  }
+
+  // Stale ring — red pulsing ring outside the circle
+  if (stale && !selected) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,50,50,0.85)';
+    ctx.lineWidth   = 2;
     ctx.stroke();
   }
 
@@ -921,7 +947,8 @@ function createMarkerIcon(vehicle, selected) {
 
 // ── Map update ────────────────────────────────────────────────────────────────
 function updateMap(data) {
-  vehicles = data.vehicles || [];
+  const pollTs = Date.now() / 1000;
+  vehicles = (data.vehicles || []).map(v => ({...v, _pollTime: pollTs}));
   const existingIds = new Set(Object.keys(markerObjects));
   const newIds      = new Set(vehicles.map(v => v.id));
 
@@ -930,48 +957,47 @@ function updateMap(data) {
     if (!newIds.has(id)) {
       markersLayer.removeLayer(markerObjects[id]);
       delete markerObjects[id];
-      delete animPos[id];
+      delete animState[id];
     }
   }
 
   for (const v of vehicles) {
     const isSelected = v.id === selectedId;
 
-    // Seed animPos on first sight — marker appears at real position immediately
-    if (!animPos[v.id]) {
-      animPos[v.id] = {lat: v.lat, lon: v.lon};
+    // Initialise animState on first sight — marker appears at real GPS immediately
+    if (!animState[v.id]) {
+      animState[v.id] = {
+        lat: v.lat, lon: v.lon,
+        fromLat: v.lat, fromLon: v.lon,
+        toLat: v.lat, toLon: v.lon,
+        progress: 1,
+        stoppedAt: null, staleRing: false, stationaryPolls: 0,
+        lastGPS: {lat: v.lat, lon: v.lon}, lastPollTime: 0,
+      };
     }
-    // animPos target is updated; the anim loop will lerp toward v.lat/v.lon
 
-    const renderPos = animPos[v.id];
+    // Update the GPS target so the animation loop can interpolate toward it
+    const s = animState[v.id];
 
     if (markerObjects[v.id]) {
-      // Only update icon (position is handled by the smooth anim loop)
       markerObjects[v.id].setIcon(createMarkerIcon(v, isSelected));
     } else {
-      // Create new marker at current (real) position
-      const marker = L.marker([renderPos.lat, renderPos.lon], {
+      const marker = L.marker([s.lat, s.lon], {
         icon: createMarkerIcon(v, isSelected),
         title: `${v.route_id} – ${v.label}`,
       });
-
       marker.on('click', () => selectTrain(v.id));
       marker.bindTooltip(buildTooltip(v), {
         direction: 'top',
         offset: [0, -10],
         className: 'train-tooltip',
       });
-
       marker.addTo(markersLayer);
       markerObjects[v.id] = marker;
     }
 
-    // Update tooltip
     markerObjects[v.id].setTooltipContent(buildTooltip(v));
-
-    if (showLabels) {
-      markerObjects[v.id].openTooltip();
-    }
+    if (showLabels) markerObjects[v.id].openTooltip();
   }
 
   // Ensure smooth animation loop is running
@@ -1005,7 +1031,6 @@ function renderTrainList() {
     !query ||
     (v.route_id || '').toLowerCase().includes(query) ||
     (v.id || '').toLowerCase().includes(query) ||
-    (v.label || '').toLowerCase().includes(query) ||
     (v.headsign || '').toLowerCase().includes(query) ||
     (v.line_name || '').toLowerCase().includes(query)
   );
@@ -1025,10 +1050,17 @@ function renderTrainList() {
   });
 
   list.innerHTML = filtered.map(v => {
-    const col = lineColour(v.route_id);
-    const dest = (v.headsign || v.label || '—')
+    const col = (v.colour || lineColour(v.route_id));
+    const stale = animState[v.id]?.staleRing || false;
+    const rawDest = (v.headsign || '')
       .replace(/,?\s*[Pp]latform\s*\d+\s*$/, '')
-      .replace(/\s+[Ss]tation\s*$/i, '');
+      .replace(/\s+[Ss]tation\s*$/i, '')
+      .trim();
+    // Trip codes look like: 1M41, DGN8, DM37, 1GN0 — alphanumeric ≤6 chars, no spaces
+    const headsignIsCode = rawDest.length <= 6 && /^[0-9A-Z]+$/i.test(rawDest);
+    const dest = headsignIsCode || !rawDest
+      ? (v.line_name || v.label || rawDest || '—')
+      : rawDest;
     const ns = v.next_stops && v.next_stops.length ? v.next_stops[0] : null;
     const nsName = ns
       ? (ns.stop_name || ns.stop_id || '')
@@ -1043,12 +1075,13 @@ function renderTrainList() {
     const curStop = v.current_stop_name
       ? v.current_stop_name.replace(/,\s*[Pp]latform\s*\d+\s*$/, '').replace(/\s+[Ss]tation\s*$/i, '').slice(0, 18)
       : '';
-    return `<div class="train-card ${v.id === selectedId ? 'selected' : ''}" onclick="selectTrain('${v.id}')">
+    return `<div class="train-card ${v.id === selectedId ? 'selected' : ''}" onclick="selectTrain('${v.id}')" style="${stale ? 'border-color:#cc2222;' : ''}">
       <div style="display:flex;align-items:center;gap:6px">
         <div style="background:${col};border-radius:3px;padding:2px 7px;flex-shrink:0;min-width:0">
           <div style="font-weight:700;font-size:0.72rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${dest}</div>
         </div>
         <span class="delay-badge ${delayClass}" style="margin-left:auto;flex-shrink:0">${delayTxt}</span>
+        ${stale ? `<span style="font-size:0.6rem;color:#ff4444;font-weight:700;flex-shrink:0" title="Stopped >2 min">⬤</span>` : ''}
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
         <span style="font-size:0.65rem;color:#5a7898;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nsName ? '→ ' + nsName : curStop ? statusVerb(v.current_status)+' '+curStop : ''}</span>
@@ -1113,7 +1146,6 @@ function showInfoPanel(v) {
     ['Delay',     delayLabel(v.delay_seconds)],
     ['Speed',     v.speed ? `${v.speed} km/h` : '—'],
     ['Heading',   bearingCompass(v.bearing)],
-    ['Direction', v.direction_id !== undefined ? (v.direction_id === 0 ? 'Outbound' : 'Inbound') : '—'],
     ['Train',     v.label],
     ['Trip ID',   v.trip_id || '—'],
   ];
@@ -1160,12 +1192,10 @@ function showInfoPanel(v) {
 function closeInfoPanel() {
   selectedId = null;
   document.getElementById('info-panel').classList.remove('visible');
-  renderTrainList();
   for (const v of vehicles) {
-    if (markerObjects[v.id]) {
-      markerObjects[v.id].setIcon(createMarkerIcon(v, false));
-    }
+    if (markerObjects[v.id]) markerObjects[v.id].setIcon(createMarkerIcon(v, false));
   }
+  renderTrainList();
 }
 
 // ── Alerts ───────────────────────────────────────────────────────────────────
@@ -1241,8 +1271,6 @@ function switchTab(name) {
   document.getElementById(`tab-${name}`).classList.add('active');
 }
 
-function filterTrains() { renderTrainList(); }
-
 function toggleLabels() {
   showLabels = !showLabels;
   document.getElementById('toggle-labels-btn').classList.toggle('active', showLabels);
@@ -1282,7 +1310,7 @@ function showToast(msg, duration = 3000) {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async () => {
   initMap();
-  loadRouteColours(); // fetch live route->colour map from GTFS
+  // colours come from v.colour on each vehicle (set by backend)
   loadShapes();       // fetch track shapes from GTFS (runs in background)
   loadStations();     // fetch station markers with arrivals
 

@@ -602,15 +602,7 @@ function initMap() {
 
   // Track shapes drawn below train markers — coloured by official Translink line colour
   shapesLayer = L.geoJSON(null, {
-    style: function(feature) {
-      return {
-        color:   feature.properties?.colour || '#336688',
-        weight:  3,
-        opacity: 0.85,
-        lineCap: 'round',
-        lineJoin:'round',
-      };
-    }
+    style: () => ({color:'#3a5a7a', weight:2.5, opacity:0.7, lineCap:'round', lineJoin:'round'})
   }).addTo(map);
 
   markersLayer  = L.layerGroup().addTo(map);
@@ -630,7 +622,6 @@ async function loadShapes() {
     }
     shapesLayer.clearLayers();
     shapesLayer.addData(geojson);
-    console.log(`Track shapes loaded: ${geojson.segment_count} segments, sample colour: ${geojson.features[0]?.properties?.colour}`);
   } catch(e) {
     console.warn('Failed to load track shapes:', e);
     setTimeout(loadShapes, 10000);

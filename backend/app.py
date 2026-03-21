@@ -150,10 +150,8 @@ def load_gtfs_static():
                 route_colors[rid] = "#" + color
     logger.info(f"  {len(rail_route_ids)} rail routes")
 
-    # Single pass over trips.txt: headsigns, shape→trip mappings, rail shape ids
-    trip_headsigns = {}   # trip_id → headsign
-    trip_to_shape  = {}   # trip_id → (shape_id, route_id)
-    shape_to_trip  = {}   # shape_id → one representative trip_id
+    # trips.txt: headsigns and rail shape ids
+    trip_headsigns = {}
     rail_shape_ids = set()
     with zf.open("trips.txt") as f:
         for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig")):
@@ -163,10 +161,8 @@ def load_gtfs_static():
             tid = row.get("trip_id","").strip()
             sid = row.get("shape_id","").strip()
             hs  = row.get("trip_headsign","").strip()
-            if sid and tid:
+            if sid:
                 rail_shape_ids.add(sid)
-                trip_to_shape[tid] = (sid, rid)
-                shape_to_trip.setdefault(sid, tid)
             if tid and hs:
                 trip_headsigns[tid] = hs
 
@@ -187,7 +183,8 @@ def load_gtfs_static():
                     stop_coords[sid] = (lat, lon)
     logger.info(f"  {len(stop_names)} stops")
 
-    # Build shape_id → ordered shape points
+    # Build shapes: one deduplicated polyline per shape_id start/end pair.
+    # Colour is no longer used (map lines are grey); we just need the coordinates.
     shape_points = {}
     with zf.open("shapes.txt") as f:
         for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig")):
@@ -203,99 +200,27 @@ def load_gtfs_static():
             except (ValueError, KeyError):
                 continue
 
-    # stop_id → {route_code → trip_count}: built from stop_times below
-    stop_route_count = {}
-
-    # Load stop_times: build stop→route counts AND shape→stop sequence
-    shape_stops = {}  # shape_id → [(seq, stop_id)]
-    with zf.open("stop_times.txt") as f:
-        for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig")):
-            tid = row.get("trip_id","").strip()
-            info = trip_to_shape.get(tid)
-            if not info:
-                continue
-            sid, rid = info
-            try:
-                seq  = int(row.get("stop_sequence","0"))
-                stop = row.get("stop_id","").strip()
-                if not stop:
-                    continue
-                # Build stop→route counts (all trips)
-                code = rid.upper().split('-')[0]
-                if stop not in stop_route_count:
-                    stop_route_count[stop] = {}
-                stop_route_count[stop][code] = stop_route_count[stop].get(code, 0) + 1
-                # Build shape→stop sequence (one representative trip only)
-                if tid == shape_to_trip.get(sid):
-                    shape_stops.setdefault(sid, []).append((seq, stop))
-            except ValueError:
-                continue
-
-    for sid in shape_stops:
-        shape_stops[sid].sort(key=lambda x: x[0])
-
-    # For a stop pair (A, B), pick colour from the route code that most frequently
-    # serves BOTH stops. This correctly distinguishes branch-only routes.
-    def pair_colour(stop_a, stop_b):
-        ra = stop_route_count.get(stop_a, {})
-        rb = stop_route_count.get(stop_b, {})
-        shared = {code: min(ra[code], rb.get(code, 0)) for code in ra if rb.get(code, 0) > 0}
-        if not shared:
-            return '#888888'
-        dominant_code = max(shared, key=shared.get)
-        # dominant_code is e.g. 'BDCA', 'RPSP', 'BRDB' — look it up directly
-        c = line_colour(dominant_code)
-        if c == '#888888':
-            # 4-letter code not found — try as 2-letter prefix
-            c = line_colour(dominant_code[:2] + 'XX')
-        return c
-
-    # Split each shape into stop-to-stop sub-segments using nearest-point matching.
-    def nearest_idx(pts, lat, lon):
-        best, bi = float('inf'), 0
-        for i, (la, lo) in enumerate(pts):
-            d = (la-lat)**2 + (lo-lon)**2
-            if d < best:
-                best, bi = d, i
-        return bi
-
-    all_segs = {}  # canonical stop-pair → {"coords", "colour", "shape_len"}
-
-    for sid, pts_raw in shape_points.items():
-        pts_raw.sort(key=lambda x: x[0])
-        pts = [(la, lo) for _, la, lo in pts_raw]
-        if len(pts) < 2:
+    # Deduplicate: per canonical start/end pair keep the shortest shape
+    sig_map = {}
+    for sid, pts in shape_points.items():
+        pts.sort(key=lambda x: x[0])
+        coords = [[lo, la] for _, la, lo in pts]
+        if len(coords) < 2:
             continue
+        c = coords
+        sig = min(
+            (round(c[0][1],3), round(c[0][0],3), round(c[-1][1],3), round(c[-1][0],3)),
+            (round(c[-1][1],3), round(c[-1][0],3), round(c[0][1],3), round(c[0][0],3))
+        )
+        n = len(coords)
+        if sig not in sig_map or n < sig_map[sig][1]:
+            sig_map[sig] = (coords, n)
 
-        stops = shape_stops.get(sid, [])
-        if len(stops) < 2:
-            continue
-
-        # Find nearest shape point for each stop
-        cut_indices = [nearest_idx(pts, stop_coords[s][0], stop_coords[s][1])
-                       for _, s in stops if s in stop_coords]
-        if len(cut_indices) < 2:
-            continue
-
-        stop_ids = [s for _, s in stops if s in stop_coords]
-
-        for i in range(len(stop_ids) - 1):
-            stop_a, stop_b = stop_ids[i], stop_ids[i+1]
-            i0, i1 = cut_indices[i], cut_indices[i+1]
-            if i0 >= i1:
-                continue
-            seg_pts = pts[i0:i1+1]
-            if len(seg_pts) < 2:
-                continue
-            coords  = [[lo, la] for la, lo in seg_pts]
-            colour  = pair_colour(stop_a, stop_b)
-            key     = tuple(sorted([stop_a, stop_b]))
-            seg     = {"coords": coords, "colour": colour, "shape_len": len(coords)}
-            if key not in all_segs or len(coords) < all_segs[key]["shape_len"]:
-                all_segs[key] = seg
-
-    shapes = sorted(all_segs.values(), key=lambda x: -x["shape_len"])
-    logger.info(f"  {len(shapes)} stop-segmented track segments")
+    shapes = sorted(
+        [{"coords": v[0], "shape_len": v[1]} for v in sig_map.values()],
+        key=lambda x: -x["shape_len"]
+    )
+    logger.info(f"  {len(shapes)} deduplicated track segments")
     return shapes, stop_names, stop_coords, trip_headsigns, route_names, route_colors, rail_route_ids
 
 
@@ -520,7 +445,7 @@ def api_shapes():
         "loaded": loaded, "shapes_updated": updated, "segment_count": len(shapes),
         "features": [{"type":"Feature",
                       "geometry":{"type":"LineString","coordinates":s["coords"]},
-                      "properties":{"colour":s["colour"]}}
+                      "properties":{}}
                      for s in shapes],
     })
 

@@ -129,8 +129,10 @@ def line_name(route_id):
     return _COLOUR_TO_LINE.get(line_colour(route_id), '')
 
 def strip_platform(name):
-    """Remove ', platform N' suffix from a stop name."""
-    return re.sub(r',?\s*[Pp]latform\s*\d+\s*$', '', name or '').strip()
+    """Remove ', platform N' and ' station' suffixes from a stop name."""
+    name = re.sub(r',?\s*[Pp]latform\s*\d+\s*$', '', name or '').strip()
+    name = re.sub(r'\s+[Ss]tation$', '', name).strip()
+    return name
 
 
 # ── GTFS static loader ────────────────────────────────────────────────────────
@@ -191,49 +193,83 @@ def load_gtfs_static():
                     stop_coords[sid] = (lat, lon)
     logger.info(f"  {len(stop_names)} stops")
 
-    # Build ordered stop lists per route prefix from stop_times.txt
-    # Use one representative trip (direction 0, longest) per prefix
-    trip_info = {}  # trip_id -> (prefix, direction_id)
+    # Build ordered stop lists per schematic line.
+    # Map: schematic line id -> ordered list of {name, lat, lon}
+    # Uses one representative trip (longest) per schematic line.
+    # City hubs are skipped from per-line lists (drawn separately as waypoints).
+    #
+    # Schematic line ids match the TREE: CAB, KCL, SHO, AIR, DOO, FER,
+    #                                     GOL, BEL, CLV, IPL, SPR
+    _CITY = {'BR','BN','BD','RO'}
+    _P2L = {
+        'FG':'FER','FN':'FER',
+        'BE':'BEL','BH':'BEL','BL':'BEL',
+        'CA':'CAB','GY':'CAB','NA':'CAB',
+        'RP':'KCL','KP':'KCL',
+        'SH':'SHO', 'AP':'AIR', 'DB':'DOO',
+        'VL':'GOL', 'CL':'CLV',
+        'IP':'IPL','RW':'IPL',
+        'SP':'SPR','SC':'SPR',
+    }
+
+    # trip_id -> schematic line id (from the non-city route half)
+    trip_to_line = {}
     with zf.open("trips.txt") as f:
         for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig")):
             rid = row.get("route_id","").strip()
-            if rid not in rail_route_ids:
-                continue
+            if rid not in rail_route_ids: continue
             tid  = row.get("trip_id","").strip()
             pfx  = rid.upper().split('-')[0]
-            ddir = row.get("direction_id","0").strip()
-            trip_info[tid] = (pfx, ddir)
+            if len(pfx) < 4: continue
+            orig, dest = pfx[:2], pfx[2:4]
+            # The non-city half identifies the line
+            lid = _P2L.get(dest if dest not in _CITY else orig)                or _P2L.get(orig if orig not in _CITY else dest)
+            if lid:
+                trip_to_line[tid] = lid
 
-    # Collect stop sequences per (prefix, direction)
-    prefix_dir_stops = {}  # (pfx, dir) -> {trip_id: [(seq, name)]}
+    # For each line, collect all trips with their stop sequences
+    line_trip_stops = {}   # line_id -> {trip_id: [(seq, name, lat, lon)]}
     with zf.open("stop_times.txt") as f:
         for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig")):
             tid = row.get("trip_id","").strip()
-            info = trip_info.get(tid)
-            if not info:
-                continue
-            pfx, ddir = info
+            lid = trip_to_line.get(tid)
+            if not lid: continue
+            sid  = row.get("stop_id","").strip()
+            name = strip_platform(stop_names.get(sid,""))
+            if not name or sid not in stop_coords: continue
             try:
-                seq  = int(row.get("stop_sequence","0"))
-                sid  = row.get("stop_id","").strip()
-                name = strip_platform(stop_names.get(sid,""))
-                if name:
-                    prefix_dir_stops.setdefault((pfx, ddir), {}).setdefault(tid, []).append((seq, name))
+                seq = int(row.get("stop_sequence","0"))
             except ValueError:
                 continue
+            lat, lon = stop_coords[sid]
+            line_trip_stops.setdefault(lid, {}).setdefault(tid, []).append((seq, name, lat, lon))
 
-    # For each prefix, pick the longest trip (most stops) as representative
-    line_stops = {}  # prefix -> [stop_name in order]
-    for (pfx, ddir), trips in prefix_dir_stops.items():
+    # Pick the longest trip per line, then always order it Roma Street → terminus.
+    ROMA = 'Roma Street'
+    line_stops_ordered = {}  # line_id -> [{name, lat, lon}]
+    for lid, trips in line_trip_stops.items():
+        # Pick longest trip (most stops = most complete route)
         best = max(trips.values(), key=len)
-        best.sort(key=lambda x: x[0])
-        ordered = list(dict.fromkeys(n for _, n in best))
-        existing = line_stops.get(pfx, [])
-        if len(ordered) > len(existing):
-            line_stops[pfx] = ordered
-    logger.info(f"  {len(line_stops)} route stop lists built")
+        best.sort(key=lambda x: x[0])  # sort by stop_sequence
 
-        # Build shapes: one deduplicated polyline per shape_id start/end pair.
+        # If Roma Street is in the second half, the trip is inbound — reverse it
+        names = [n for _, n, _, _ in best]
+        roma_idx = names.index(ROMA) if ROMA in names else -1
+        if roma_idx < 0 or roma_idx > len(best) // 2:
+            best = list(reversed(best))
+
+        seen = set()
+        ordered = []
+        for _, name, lat, lon in best:
+            if name not in seen:
+                seen.add(name)
+                ordered.append({"name": name, "lat": lat, "lon": lon})
+        line_stops_ordered[lid] = ordered
+
+    logger.info(f"  {sum(len(v) for v in line_stops_ordered.values())} stops across {len(line_stops_ordered)} schematic lines")
+    line_stops = line_stops_ordered
+
+    # Build shapes: one deduplicated polyline per shape_id start/end pair.
     # Colour is no longer used (map lines are grey); we just need the coordinates.
     shape_points = {}
     with zf.open("shapes.txt") as f:
@@ -588,13 +624,28 @@ def api_shapes():
     })
 
 
-@app.route("/api/line_stops")
-def api_line_stops():
-    """Return ordered stop names per route prefix from GTFS static data."""
+@app.route("/api/rail_stops")
+def api_rail_stops():
+    """Return ordered stop lists per schematic line from GTFS static data."""
     with cache_lock:
-        line_stops = dict(cache.get("line_stops", {}))
-        loaded     = cache["shapes_loaded"]
-    return jsonify({"line_stops": line_stops, "loaded": loaded})
+        stops  = dict(cache.get("line_stops", {}))
+        loaded = cache["shapes_loaded"]
+    return jsonify({"stops": stops, "loaded": loaded})
+
+
+@app.route("/api/debug/rail_stops")
+def api_debug_rail_stops():
+    """Show first/last 3 stops per line for debugging layout."""
+    with cache_lock:
+        stops = dict(cache.get("line_stops", {}))
+    summary = {}
+    for lid, lst in stops.items():
+        summary[lid] = {
+            "count": len(lst),
+            "first3": [s["name"] for s in lst[:3]],
+            "last3":  [s["name"] for s in lst[-3:]],
+        }
+    return jsonify(summary)
 
 
 @app.route("/api/stations")

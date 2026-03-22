@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>SEQ Rail Control</title>
+<title>TrainInt — Control</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#0b0d10;color:#b8c8dc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px;}
@@ -60,7 +60,7 @@ header{height:40px;background:#10141a;border-bottom:1px solid #1e2738;display:fl
 </head>
 <body>
 <header>
-  <div class="logo">SEQ Rail <span>/ Control</span></div>
+  <div class="logo">Train<span>Int</span> <span>/ Control</span></div>
   <div class="pill"><div class="led" id="sled"></div>Live <strong id="hcount">—</strong></div>
   <div class="pill"><strong id="hlate" style="color:#ff4444">—</strong> late</div>
   <div class="pill">Updated <strong id="hupdated">—</strong></div>
@@ -258,6 +258,7 @@ const LINES_FOR_POS = [
   {id:'AIR',col:C.AIR,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Wooloowin','Albion','Domestic Airport','International Airport']},
   {id:'DOO',col:C.DOO,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Clayfield','Hendra','Ascot','Doomben']},
   {id:'FER',col:C.FER,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Windsor','Wilston','Newmarket','Alderley','Enoggera','Gaythorne','Mitchelton','Oxford Park','Grovely','Keperra','Ferny Grove']},
+  {id:'BEL',col:C.BEL,stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh']},
   {id:'GOL',col:C.GOL,stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh','Ormeau','Pimpama','Coomera','Helensvale','Nerang','Robina','Varsity Lakes']},
   {id:'CLV',col:C.CLV,stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Buranda','Coorparoo','Norman Park','Morningside','Cannon Hill','Murarrie','Hemmant','Lindum','Wynnum North','Wynnum','Wynnum Central','Manly','Lota','Thorneside','Birkdale','Wellington Point','Ormiston','Cleveland']},
   {id:'IPL',col:C.IPL,stops:['Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Wacol','Gailes','Goodna','Redbank','Riverview','Dinmore','Bundamba','Booval','Ipswich','Walloon','Rosewood']},
@@ -282,7 +283,7 @@ function buildLayout(W,H){
   // Build linePts for trainPos
   for(const ln of LINES_FOR_POS){
     linePts[ln.id]=ln.stops
-      .map(s=>({ name:s, ...(nodeXY[s]||nodeXY[s.replace(' (SHO)','')||s]) }))
+      .map(s=>({ name:s, ...(nodeXY[s] || nodeXY[s.replace(/ \(\w+\)$/,'')]) }))
       .filter(p=>p.x!==undefined);
   }
 }
@@ -374,7 +375,7 @@ function trainPos(v){
   }
   if(!pts||!pts.length) pts=linePts['CAB']||[];
   if(!pts||!pts.length) return {x:0,y:0};
-  const nn=s=>s.toLowerCase().replace(/,?\s*platform\s*\d+\s*$/i,'').replace(/\s+station$/i,'').trim();
+  const nn=s=>s.toLowerCase().replace(/\s*\(\w+\)$/,'').replace(/,?\s*platform\s*\d+\s*$/i,'').replace(/\s+station$/i,'').trim();
   const nxt=nn(v.next_stops?.[0]?.stop_name||'');
   const cur=nn(v.current_stop_name||'');
   const fw=w=>w.split(' ')[0];
@@ -488,7 +489,7 @@ function draw(){
 
   // ── Trains ────────────────────────────────────────────────────────────────
   for(const v of vehicles){
-    const pos=trainPos(v),col=trainColour(v);
+    const pos=animPos(v),col=trainColour(v);
     const sel=selType==='train'&&selId===v.id;
     const delay=v.delay_seconds||0;
     const TW=(sel?38:30)/vp.scale, TH=(sel?16:12)/vp.scale, rx=3/vp.scale;
@@ -529,6 +530,13 @@ function draw(){
     ctx.fillStyle='rgba(255,255,255,.2)';
     ctx.beginPath();ctx.rect(x-TW/2+rx,y-TH/2,TW-rx*2,TH*0.35);ctx.fill();
 
+    // Stopped alert ring
+    if(v.stopped_alert){
+      ctx.beginPath();ctx.arc(x,y,TH*1.8,0,Math.PI*2);
+      ctx.strokeStyle='#ff4444';ctx.lineWidth=2/vp.scale;
+      ctx.globalAlpha=0.5+0.4*Math.abs(Math.sin(Date.now()/600));
+      ctx.stroke();ctx.globalAlpha=1;
+    }
     // Late stripe
     if(delay>60){ctx.fillStyle='#cc1111';ctx.fillRect(x-TW/2,y-TH/2,5/vp.scale,TH);}
 
@@ -601,8 +609,12 @@ function showTrain(v){
       <div style="font-weight:700;font-size:11px;color:#e8f0fa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.route_id||'—'} → ${v.headsign||'—'}</div>
     </div>
     ${mkrows([['Train',v.label||v.id,''],['Status',st,''],['Delay',ds,dc],['Speed',v.speed?v.speed+' km/h':'—',''],['Heading',hd,'']])}`;
+  // Stopped alert banner
+  const alertHtml = v.stopped_alert
+    ? `<div style="background:#3d0a0a;border:1px solid #a03030;border-radius:4px;padding:4px 8px;margin-bottom:6px;font-size:10px;color:#ff9999">⚠ ${v.stopped_alert}</div>`
+    : '';
   const td=d,stops=v.next_stops||[];
-  document.getElementById('sel-body').innerHTML=`<div class="itl">Next Stops</div>${stops.length?stops.map((s,i)=>{
+  document.getElementById('sel-body').innerHTML=alertHtml+`<div class="itl">Next Stops</div>${stops.length?stops.map((s,i)=>{
     const nm=(s.stop_name||s.stop_id).replace(/,\s*[Pp]latform\s*\d+\s*$/,'').replace(/\s+[Ss]tation$/i,'');
     const d2=s.arrival_delay;let ds2='';
     if(d2!=null){if(Math.abs(d2)<60)ds2='';else if(Math.abs(d2-td)>=60)ds2=d2>0?`+${Math.round(d2/60)}m`:`${Math.round(d2/60)}m`;}
@@ -647,9 +659,10 @@ function renderList(){
   const dc=d=>d>60?'late':d<-30?'early':'ok',dl=d=>d>60?`+${Math.round(d/60)}m`:d<-30?`${Math.round(d/60)}m`:'On time';
   document.getElementById('tlist').innerHTML=s.length?s.map(v=>{
     const d=v.delay_seconds||0,sel=selType==='train'&&selId===v.id,bc=trainColour(v);
+    const alertDot = v.stopped_alert ? '<span style="color:#ff6060;font-weight:700" title="'+v.stopped_alert+'"> ⚠</span>' : '';
     return`<div class="en ${sel?'sel':''}" onclick="selectTrain('${v.id}')">
       <div class="et">
-        <span class="rb" style="background:${bc}">${(v.headsign||v.route_id||'—').replace(/\s+[Ss]tation$/i,'').slice(0,18)}</span>
+        <span class="rb" style="background:${bc}">${(v.headsign||v.route_id||'—').replace(/\s+[Ss]tation$/i,'').slice(0,18)}${alertDot}</span>
         <span class="dtg ${dc(d)}">${dl(d)}</span>
       </div>
       <div class="em">${v.current_stop_name?('→ '+v.current_stop_name.replace(/\s+[Ss]tation$/i,'').slice(0,20)):''}</div>
@@ -657,6 +670,51 @@ function renderList(){
   }).join(''):`<div style="color:#3a4a5e;padding:12px;text-align:center;font-size:10px">No trains</div>`;
 }
 function selectTrain(id){const v=vehicles.find(x=>x.id===id);if(!v)return;if(selId===id&&selType==='train'){clearD();return;}selId=id;selType='train';renderList();showTrain(v);}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANIMATION — smooth train movement along schematic lines
+// ─────────────────────────────────────────────────────────────────────────────
+const animState = {};  // vid → {fromX,fromY,toX,toY,progress,lastPoll}
+let lastTick = null;
+
+function animPos(v) {
+  // Get the schematic target position from trainPos
+  const target = trainPos(v);
+  let s = animState[v.id];
+  if (!s) {
+    // First time seen — place exactly at target
+    s = animState[v.id] = {
+      x: target.x, y: target.y,
+      fromX: target.x, fromY: target.y,
+      toX: target.x,   toY: target.y,
+      progress: 1,
+    };
+    return s;
+  }
+  // If target moved (new poll arrived), start a new tween
+  const dx = target.x - s.toX, dy = target.y - s.toY;
+  if (Math.hypot(dx, dy) > 0.5) {
+    s.fromX = s.x; s.fromY = s.y;
+    s.toX   = target.x; s.toY = target.y;
+    s.progress = 0;
+  }
+  return s;
+}
+
+function animTick(ts) {
+  const dt = lastTick ? Math.min((ts - lastTick) / 1000, 0.5) : 0.016;
+  lastTick = ts;
+  const step = dt / 13; // reach target in ~13s (one poll interval)
+  for (const v of vehicles) {
+    const s = animState[v.id];
+    if (!s || s.progress >= 1) continue;
+    s.progress = Math.min(1, s.progress + step);
+    s.x = s.fromX + (s.toX - s.fromX) * s.progress;
+    s.y = s.fromY + (s.toY - s.fromY) * s.progress;
+  }
+  draw();
+  requestAnimationFrame(animTick);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA
@@ -677,14 +735,13 @@ async function refresh(){
 }
 
 setInterval(()=>{const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});},1000);
-function animLoop(){draw();requestAnimationFrame(animLoop);}
 function resize(){
   const c=document.getElementById('sch'),w=document.getElementById('cwrap');
   c.width=w.clientWidth;c.height=w.clientHeight;canW=c.width;canH=c.height;
   buildLayout(canW,canH);centreRoma();draw();
 }
 window.addEventListener('resize',resize);
-resize();refresh().then(()=>animLoop());setInterval(refresh,15000);
+resize();refresh().then(()=>requestAnimationFrame(animTick));setInterval(refresh,15000);
 
 // ── Sidebar toggle ─────────────────────────────────────────────────────────
 function toggleSidebar(){

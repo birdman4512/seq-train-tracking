@@ -48,6 +48,13 @@ cache_lock           = threading.Lock()
 position_history     = {}
 position_history_lock= threading.Lock()
 
+# Stopped-train alert tracking (persists between polls)
+# vid -> {first_stop_id, first_depart_time, last_lat, last_lon, last_gps_time,
+#          dwell_start, dwell_stop_id}
+ALERT_SECS      = 3 * 60  # 3 minutes
+stopped_tracker = {}
+st_lock         = threading.Lock()
+
 # ── Colour lookup ─────────────────────────────────────────────────────────────
 # Official Translink SEQ line colours.
 # route_id format: {origin2}{dest2}-{trip}  e.g. IPCA-4754, BRFG-4754
@@ -374,6 +381,92 @@ def parse_alerts(feed, rail_route_ids):
     return alerts
 
 
+# ── Stopped-train alert logic ────────────────────────────────────────────────
+
+def update_stopped_alerts(vehicles, trip_updates, now):
+    """
+    Adds 'stopped_alert' field to each vehicle dict when:
+      1. Train is still at its first scheduled stop after ALERT_SECS past departure time.
+      2. Train GPS hasn't moved for ALERT_SECS while in transit between stations.
+      3. Train is dwelling at a mid-route station for longer than ALERT_SECS.
+    """
+    with st_lock:
+        seen = set()
+        for v in vehicles:
+            vid    = v["id"]
+            seen.add(vid)
+            status = v.get("current_status", "")
+            lat, lon = v.get("lat", 0), v.get("lon", 0)
+            stop_id  = v.get("current_stop_id") or ""
+            tu       = trip_updates.get(v.get("trip_id",""), {})
+            all_stops = sorted(tu.get("stop_time_updates", []), key=lambda s: s.get("stop_sequence", 0))
+
+            st = stopped_tracker.setdefault(vid, {
+                "last_lat": lat, "last_lon": lon, "last_gps_time": now,
+                "dwell_start": None, "dwell_stop_id": None,
+                "origin_depart_time": None, "origin_stop_id": None,
+            })
+
+            alert = None
+
+            # ── 1. GPS staleness check (in-transit only) ─────────────────────
+            moved = abs(lat - st["last_lat"]) + abs(lon - st["last_lon"]) > 0.0002
+            if moved:
+                st["last_lat"] = lat
+                st["last_lon"] = lon
+                st["last_gps_time"] = now
+            elif status != "STOPPED_AT":
+                gps_age = now - st["last_gps_time"]
+                if gps_age >= ALERT_SECS:
+                    mins = int(gps_age // 60)
+                    alert = f"GPS not updated for {mins}m"
+
+            # ── 2. Dwell at mid-route station ────────────────────────────────
+            if status == "STOPPED_AT" and stop_id and all_stops:
+                # Is this the origin (first stop)?
+                first_seq = all_stops[0].get("stop_sequence", 0) if all_stops else 0
+                cur_seq   = v.get("current_stop_sequence", 0)
+                is_origin = (cur_seq <= first_seq)
+
+                if not is_origin:
+                    if st["dwell_stop_id"] != stop_id:
+                        st["dwell_start"]   = now
+                        st["dwell_stop_id"] = stop_id
+                    elif st["dwell_start"] and (now - st["dwell_start"]) >= ALERT_SECS:
+                        mins = int((now - st["dwell_start"]) // 60)
+                        alert = alert or f"Stopped at {v.get('current_stop_name') or stop_id} for {mins}m"
+                else:
+                    # Reset dwell if we moved to a new stop
+                    if st["dwell_stop_id"] != stop_id:
+                        st["dwell_stop_id"] = stop_id
+                        st["dwell_start"]   = None
+
+            elif status != "STOPPED_AT":
+                # Cleared the station — reset dwell
+                st["dwell_start"]   = None
+                st["dwell_stop_id"] = None
+
+            # ── 3. Still at origin past scheduled departure ──────────────────
+            if status == "STOPPED_AT" and all_stops:
+                first_stop = all_stops[0]
+                first_seq  = first_stop.get("stop_sequence", 0)
+                cur_seq    = v.get("current_stop_sequence", 0)
+                if cur_seq <= first_seq:
+                    dep_time = first_stop.get("departure_time")
+                    if dep_time and dep_time > 0:
+                        overdue = now - dep_time
+                        if overdue >= ALERT_SECS:
+                            mins = int(overdue // 60)
+                            alert = alert or f"Held at origin for {mins}m past departure"
+
+            v["stopped_alert"] = alert
+
+        # Purge stale vehicles
+        for vid in list(stopped_tracker.keys()):
+            if vid not in seen:
+                del stopped_tracker[vid]
+
+
 # ── Poll loop ─────────────────────────────────────────────────────────────────
 
 def poll_feeds():
@@ -392,6 +485,7 @@ def poll_feeds():
             vehicles     = parse_vehicles(veh_feed, stop_names, trip_headsigns)
             trip_updates = parse_trip_updates(tu_feed, stop_names)
             alerts       = parse_alerts(al_feed, rail_route_ids)
+            update_stopped_alerts(vehicles, trip_updates, time.time())
 
             with cache_lock:
                 cache["vehicles"]     = vehicles

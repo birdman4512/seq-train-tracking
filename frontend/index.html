@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Queensland Live Train Tracker</title>
+  <title>TrainInt — SEQ Live Trains</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
@@ -392,7 +392,7 @@
 <!-- Loading Screen -->
 <div id="loading">
   <div class="loader-train">🚆</div>
-  <div class="loader-text">Connecting to Queensland Translink feeds…</div>
+  <div class="loader-text">Connecting to TrainInt feeds…</div>
   <div class="loader-bar"><div class="loader-bar-fill"></div></div>
 </div>
 
@@ -401,7 +401,7 @@
   <div class="logo">
     <div class="logo-icon">🚆</div>
     <div>
-      <h1>SEQ <span>Train Tracker</span></h1>
+      <h1>Train<span>Int</span></h1>
     </div>
   </div>
   <button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
@@ -1096,6 +1096,7 @@ function showInfoPanel(v) {
   const rows = [
     ['Status',    statusLine],
     ['Delay',     delayLabel(v.delay_seconds)],
+    ...(v.stopped_alert ? [['⚠ Alert', `<span style="color:#ff9999">${v.stopped_alert}</span>`]] : []),
     ['Speed',     v.speed ? `${v.speed} km/h` : '—'],
     ['Heading',   bearingCompass(v.bearing)],
     ['Train',     v.label],

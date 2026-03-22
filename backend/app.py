@@ -40,6 +40,7 @@ cache = {
     "trip_headsigns": {},   # trip_id  -> headsign string
     "rail_route_ids": set(),
     "shapes_loaded":  False,
+    "line_stops":     {},
     "last_updated":   None,
     "shapes_updated": None,
     "error":          None,
@@ -190,7 +191,49 @@ def load_gtfs_static():
                     stop_coords[sid] = (lat, lon)
     logger.info(f"  {len(stop_names)} stops")
 
-    # Build shapes: one deduplicated polyline per shape_id start/end pair.
+    # Build ordered stop lists per route prefix from stop_times.txt
+    # Use one representative trip (direction 0, longest) per prefix
+    trip_info = {}  # trip_id -> (prefix, direction_id)
+    with zf.open("trips.txt") as f:
+        for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig")):
+            rid = row.get("route_id","").strip()
+            if rid not in rail_route_ids:
+                continue
+            tid  = row.get("trip_id","").strip()
+            pfx  = rid.upper().split('-')[0]
+            ddir = row.get("direction_id","0").strip()
+            trip_info[tid] = (pfx, ddir)
+
+    # Collect stop sequences per (prefix, direction)
+    prefix_dir_stops = {}  # (pfx, dir) -> {trip_id: [(seq, name)]}
+    with zf.open("stop_times.txt") as f:
+        for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig")):
+            tid = row.get("trip_id","").strip()
+            info = trip_info.get(tid)
+            if not info:
+                continue
+            pfx, ddir = info
+            try:
+                seq  = int(row.get("stop_sequence","0"))
+                sid  = row.get("stop_id","").strip()
+                name = strip_platform(stop_names.get(sid,""))
+                if name:
+                    prefix_dir_stops.setdefault((pfx, ddir), {}).setdefault(tid, []).append((seq, name))
+            except ValueError:
+                continue
+
+    # For each prefix, pick the longest trip (most stops) as representative
+    line_stops = {}  # prefix -> [stop_name in order]
+    for (pfx, ddir), trips in prefix_dir_stops.items():
+        best = max(trips.values(), key=len)
+        best.sort(key=lambda x: x[0])
+        ordered = list(dict.fromkeys(n for _, n in best))
+        existing = line_stops.get(pfx, [])
+        if len(ordered) > len(existing):
+            line_stops[pfx] = ordered
+    logger.info(f"  {len(line_stops)} route stop lists built")
+
+        # Build shapes: one deduplicated polyline per shape_id start/end pair.
     # Colour is no longer used (map lines are grey); we just need the coordinates.
     shape_points = {}
     with zf.open("shapes.txt") as f:
@@ -228,19 +271,20 @@ def load_gtfs_static():
         key=lambda x: -x["shape_len"]
     )
     logger.info(f"  {len(shapes)} deduplicated track segments")
-    return shapes, stop_names, stop_coords, trip_headsigns, route_names, route_colors, rail_route_ids
+    return shapes, stop_names, stop_coords, trip_headsigns, route_names, route_colors, rail_route_ids, line_stops
 
 
 def gtfs_loader_thread():
     while True:
         try:
-            shapes, stop_names, stop_coords, trip_headsigns, route_names, route_colors, rail_ids = load_gtfs_static()
+            shapes, stop_names, stop_coords, trip_headsigns, route_names, route_colors, rail_ids, line_stops = load_gtfs_static()
             with cache_lock:
                 cache.update({
                     "shapes": shapes, "stop_names": stop_names, "stop_coords": stop_coords,
                     "trip_headsigns": trip_headsigns, "route_names": route_names,
                     "route_colors": route_colors, "rail_route_ids": rail_ids,
                     "shapes_loaded": True, "shapes_updated": time.time(),
+                    "line_stops": line_stops,
                 })
             logger.info("GTFS static data loaded")
         except Exception as e:
@@ -542,6 +586,15 @@ def api_shapes():
                       "properties":{}}
                      for s in shapes],
     })
+
+
+@app.route("/api/line_stops")
+def api_line_stops():
+    """Return ordered stop names per route prefix from GTFS static data."""
+    with cache_lock:
+        line_stops = dict(cache.get("line_stops", {}))
+        loaded     = cache["shapes_loaded"]
+    return jsonify({"line_stops": line_stops, "loaded": loaded})
 
 
 @app.route("/api/stations")

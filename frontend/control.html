@@ -105,28 +105,11 @@ const API_BASE = (()=>{
 document.getElementById('mapbtn').onclick = () => location.href = API_BASE.replace(/\/api$/, '/');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COLOURS
+// COLOURS — mirrors backend line_colour(); used as fallback when v.colour missing
 // ─────────────────────────────────────────────────────────────────────────────
-const LINE_COLOURS={red:'#e3000f',green:'#007b40',gold:'#f5a400',blue:'#00aeef',purple:'#7b2d8b'};
-const ROUTE_COLOUR_TABLE={
-  FGBR:'red',BRFG:'red',BNFG:'red',FGBN:'red',BRBR:'red',BNBN:'red',BNBR:'red',BRBN:'red',BDBN:'red',BNBD:'red',
-  BDVL:'gold',VLBD:'gold',BNVL:'gold',VLBN:'gold',BRVL:'gold',VLBR:'gold',
-  BRAP:'gold',APBR:'gold',BNAP:'gold',APBN:'gold',BDAP:'gold',APBD:'gold',BRBD:'gold',BDBR:'gold',DBBR:'gold',
-  BRSH:'blue',SHBR:'blue',BNSH:'blue',SHBN:'blue',BDSH:'blue',SHBD:'blue',
-  RPSP:'blue',SPRP:'blue',BRSP:'blue',SPBR:'blue',BNSP:'blue',SPBN:'blue',
-  BRDB:'purple',DBBN:'purple',BRCL:'purple',CLBR:'purple',BNCL:'purple',CLBN:'purple',
-  BDCA:'green',CABD:'green',BNCA:'green',CABN:'green',BRCA:'green',CABR:'green',
-  BRGY:'green',GYBR:'green',IPCA:'green',CAIP:'green',
-  IPNA:'green',NAIP:'green',IPRW:'green',RWIP:'green',
-  BRRW:'green',RWBR:'green',RPBR:'green',BRRP:'green',
-};
-const PFX2={FG:'red',BE:'red',VL:'gold',AP:'gold',SH:'blue',SP:'blue',DO:'purple',CL:'purple',CA:'green',NA:'green',GY:'green',IP:'green',RW:'green',RP:'green',KP:'green',IM:'green'};
-function lc(rid){
-  if(!rid)return'#5a6478';
-  const code=rid.toUpperCase().split('-')[0];
-  const name=ROUTE_COLOUR_TABLE[code]||PFX2[code.slice(0,2)];
-  return name?LINE_COLOURS[name]:'#7a8899';
-}
+const _LC={FGBR:'#e3000f',BRFG:'#e3000f',BRCL:'#7b2d8b',CLBR:'#7b2d8b',BRDB:'#7b2d8b',BRSH:'#00aeef',RPSP:'#00aeef',BRBD:'#f5a400',BNVL:'#f5a400',IPCA:'#007b40',CAIP:'#007b40'};
+const _LP=[['FG','#e3000f'],['BE','#e3000f'],['VL','#f5a400'],['AP','#f5a400'],['SH','#00aeef'],['SP','#00aeef'],['DO','#7b2d8b'],['CL','#7b2d8b'],['CA','#007b40'],['NA','#007b40'],['GY','#007b40'],['IP','#007b40'],['RW','#007b40'],['RP','#007b40'],['KP','#007b40']];
+function lc(rid){if(!rid)return'#5a6478';const c=rid.toUpperCase().split('-')[0];if(_LC[c])return _LC[c];for(const[p,col]of _LP)if(c.startsWith(p))return col;return'#7a8899';}
 // Gray for inner-city trains terminating at/from Roma Street ↔ Northgate corridor
 const INNER_CITY=new Set(['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate']);
 function trainColour(v){
@@ -136,9 +119,6 @@ function trainColour(v){
   return v.colour||lc(v.route_id);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COLOURS
-// ─────────────────────────────────────────────────────────────────────────────
 const C={
   CAB:'#007b40', GOL:'#f5a400', FER:'#e3000f', AIR:'#f5a400',
   DOO:'#7b2d8b', SHO:'#00aeef', KCL:'#007b40',
@@ -182,7 +162,7 @@ const TREE = {
           col: C.CLV, dx: -1, dy: +1, children: [] },
         // GOL continues to Varsity Lakes
         { stops: ['Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea',
-                  'Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn',
+                  'Salisbury','Coopers Plains','Banoon','Sunnybank','Sunnybank Hills','Altandi','Runcorn',
                   'Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea',
                   'Bethania','Edens Landing','Holmview','Beenleigh','Ormeau','Pimpama',
                   'Coomera','Helensvale','Nerang','Robina','Varsity Lakes'],
@@ -199,7 +179,7 @@ const TREE = {
           col: C.SPR, dx: -1, dy: +1, children: [] },
         // IPL continues to Rosewood
         { stops: ['Wacol','Gailes','Goodna','Redbank','Riverview','Dinmore','Bundamba',
-                  'Booval','Ipswich','Walloon','Rosewood'],
+                  'Booval','Ipswich','East Ipswich','Woodend','Silkstone','Citywalk','Ebbw Vale','Walloon','Rosewood'],
           col: C.IPL, dx: -1, dy: 0, children: [] },
       ]
     },
@@ -237,7 +217,7 @@ const TREE = {
                     // CAB continues to Gympie North
                     { stops: ['Narangba','Burpengary','Morayfield','Caboolture','Elimbah',
                               'Beerburrum','Glasshouse Mountains','Beerwah','Landsborough',
-                              'Woombye','Nambour','Gympie North'],
+                              'Woombye','Nambour','Yandina','Cooroy','Pomona','Gympie North'],
                       col: C.CAB, dx: +1, dy: 0, children: [] },
                   ]
                 }
@@ -250,20 +230,29 @@ const TREE = {
   ]
 };
 
-// All line stop lists for trainPos (derived by traversal)
-const LINES_FOR_POS = [
-  {id:'CAB',col:C.CAB,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate','Carseldine','Bald Hills','Strathpine','Lawnton','Petrie','Narangba','Burpengary','Morayfield','Caboolture','Elimbah','Beerburrum','Glasshouse Mountains','Beerwah','Landsborough','Woombye','Nambour','Gympie North']},
-  {id:'KCL',col:C.KCL,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate','Carseldine','Bald Hills','Strathpine','Lawnton','Petrie','Kallangur','Murrumba Downs','Mango Hill','Mango Hill East','Rothwell','Kippa-Ring']},
-  {id:'SHO',col:C.SHO,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate','Wooloowin (SHO)','Albion (SHO)','Bindha','Banyo','Nudgee','Boondall','North Boondall','Deagon','Sandgate','Shorncliffe']},
-  {id:'AIR',col:C.AIR,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Wooloowin','Albion','Domestic Airport','International Airport']},
-  {id:'DOO',col:C.DOO,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Eagle Junction','Clayfield','Hendra','Ascot','Doomben']},
-  {id:'FER',col:C.FER,stops:['Roma Street','Central','Fortitude Valley','Bowen Hills','Windsor','Wilston','Newmarket','Alderley','Enoggera','Gaythorne','Mitchelton','Oxford Park','Grovely','Keperra','Ferny Grove']},
-  {id:'BEL',col:C.BEL,stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh']},
-  {id:'GOL',col:C.GOL,stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Edens Landing','Holmview','Beenleigh','Ormeau','Pimpama','Coomera','Helensvale','Nerang','Robina','Varsity Lakes']},
-  {id:'CLV',col:C.CLV,stops:['Roma Street','South Brisbane','South Bank','Boggo Road','Buranda','Coorparoo','Norman Park','Morningside','Cannon Hill','Murarrie','Hemmant','Lindum','Wynnum North','Wynnum','Wynnum Central','Manly','Lota','Thorneside','Birkdale','Wellington Point','Ormiston','Cleveland']},
-  {id:'IPL',col:C.IPL,stops:['Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Wacol','Gailes','Goodna','Redbank','Riverview','Dinmore','Bundamba','Booval','Ipswich','Walloon','Rosewood']},
-  {id:'SPR',col:C.SPR,stops:['Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Richlands','Springfield','Springfield Central']},
-];
+// Route prefix -> schematic line id (for trainPos line resolution)
+const PREFIX_TO_LINE = {
+  // Prefix codes that start a route (first 2 letters)
+  FG:'FER', // Ferny Grove
+  CA:'CAB',GY:'CAB',NA:'CAB', // Caboolture/Nambour/Gympie
+  RP:'KCL',KP:'KCL', // Kippa-Ring
+  SH:'SHO', // Shorncliffe
+  AP:'AIR',BD:'AIR', // Airport
+  DB:'DOO', // Doomben
+  BL:'BEL',BH:'BEL', // Beenleigh
+  VL:'GOL', // Gold Coast
+  CL:'CLV', // Cleveland
+  IP:'IPL',RW:'IPL', // Ipswich/Rosewood
+  SP:'SPR',SC:'SPR', // Springfield
+};
+// Line id -> colour
+const LINE_COL = {
+  CAB:C.CAB, KCL:C.KCL, SHO:C.SHO, AIR:C.AIR, DOO:C.DOO, FER:C.FER,
+  BEL:C.BEL, GOL:C.GOL, CLV:C.CLV, IPL:C.IPL, SPR:C.SPR,
+};
+
+// linePts is populated from /api/line_stops after GTFS loads
+// Keys are schematic line IDs: CAB, KCL, SHO, AIR, DOO, FER, BEL, GOL, CLV, IPL, SPR
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYOUT ENGINE — walk the tree, placing each station at exactly one (x,y)
@@ -271,20 +260,53 @@ const LINES_FOR_POS = [
 let canW=0,canH=0,vp={x:0,y:0,scale:1};
 let nodeXY={}, drawSegs=[], linePts={};
 let U_last=20;
+// Ordered stop lists from /api/line_stops (keyed by schematic line id)
+let apiLineStops={};
+
+async function loadLineStops(){
+  try{
+    const r=await fetch(API_BASE+'/line_stops');
+    const d=await r.json();
+    if(!d.loaded){setTimeout(loadLineStops,5000);return;}
+    // Map route prefixes to schematic line IDs and merge stop lists
+    const merged={};
+    for(const[pfx,stops] of Object.entries(d.line_stops)){
+      const lid=PREFIX_TO_LINE[pfx.slice(0,2)];
+      if(!lid) continue;
+      const existing=merged[lid]||[];
+      // Keep the longer list (more stops = more complete)
+      if(stops.length>existing.length) merged[lid]=stops;
+    }
+    apiLineStops=merged;
+    rebuildLinePts();
+    draw();
+  }catch(e){console.warn('line_stops load failed:',e);setTimeout(loadLineStops,10000);}
+}
 
 function buildLayout(W,H){
   nodeXY={}; drawSegs=[];
-  for(const ln of LINES_FOR_POS) linePts[ln.id]=[];
-  // Fit: right spine ≈ 27 stops; left spine ≈ 34 stops; 8 rows tall (-4 to +3, 2U each = 14U)
   const U=Math.min(W*0.85/38, H*0.85/16);
   U_last=U;
   nodeXY['Roma Street']={x:0,y:0};
   walkTree(TREE, 0, 0, U);
-  // Build linePts for trainPos
-  for(const ln of LINES_FOR_POS){
-    linePts[ln.id]=ln.stops
-      .map(s=>({ name:s, ...(nodeXY[s] || nodeXY[s.replace(/ \(\w+\)$/,'')]) }))
-      .filter(p=>p.x!==undefined);
+  // Rebuild linePts from API-loaded stop lists (placed via nodeXY)
+  rebuildLinePts();
+}
+
+// Build linePts from API stop names mapped to schematic nodeXY positions.
+// A stop with no direct nodeXY entry gets placed at the midpoint of its
+// nearest known neighbours on the same schematic segment.
+function rebuildLinePts(){
+  for(const [lid, stops] of Object.entries(apiLineStops)){
+    const pts=[];
+    for(const name of stops){
+      // Strip suffix variants, look up in nodeXY
+      const pos=nodeXY[name]||nodeXY[name.replace(/ \(\w+\)$/,'')];
+      if(pos) pts.push({name,x:pos.x,y:pos.y});
+      // Unknown stops (not in schematic tree) are skipped for position;
+      // they still appear in trainPos matching via the stop name list
+    }
+    linePts[lid]=pts;
   }
 }
 
@@ -319,7 +341,6 @@ function walkTree(node, px, py, U){
 // ─────────────────────────────────────────────────────────────────────────────
 // VIEWPORT
 // ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
 function toCanvas(cx,cy){return[cx*vp.scale+vp.x, cy*vp.scale+vp.y];}
 function toContent(px,py){return[(px-vp.x)/vp.scale, (py-vp.y)/vp.scale];}
 function centreRoma(){vp.x=canW*0.25; vp.y=canH/2;}
@@ -336,55 +357,48 @@ function zoom(f,px,py){
 // ─────────────────────────────────────────────────────────────────────────────
 // TRAIN POSITIONING
 // ─────────────────────────────────────────────────────────────────────────────
-// Maps 2-letter station code to line ID. City-hub codes (BR,BN,BD) aren't unique.
-// Terminus codes uniquely identify a line.
-const CODE_TO_LINE = {
-  FG:'FER',FN:'FER',                  // Ferny Grove
-  GY:'CAB',CA:'CAB',NA:'CAB',         // Caboolture / Nambour / Gympie
-  KP:'KCL',KL:'KCL',                  // Kippa-Ring / Redcliffe
-  SH:'SHO',                            // Shorncliffe
-  AP:'AIR',BD:'AIR',                   // Airport (BD=Bowen Hills terminus for airport trips)
-  DB:'DOO',                            // Doomben
-  BL:'BEL',BH:'BEL',                  // Beenleigh
-  VL:'GOL',                            // Gold Coast / Varsity Lakes
-  CL:'CLV',                            // Cleveland
-  RW:'IPL',IP:'IPL',                   // Ipswich / Rosewood
-  SP:'SPR',SC:'SPR',                   // Springfield
-};
-// City hub codes — not unique, use BEL as default inner-city line
 const CITY_CODES = new Set(['BR','BN','RO']);
-function trainPos(v){
-  let pts=null;
-  const code=(v.route_id||'').toUpperCase().split('-')[0];
-  // Try exact line id match first (e.g. route starts with 'CAB', 'KCL')
-  for(const ln of LINES_FOR_POS){
-    if(code.startsWith(ln.id)){pts=linePts[ln.id];break;}
-  }
-  // Check dest code (where train is going) first — it identifies the terminus line
-  if(!pts && code.length>=4){
-    const orig=code.slice(0,2), dest=code.slice(2,4);
-    const lineId = (!CITY_CODES.has(dest) ? CODE_TO_LINE[dest] : null)
-                || (!CITY_CODES.has(orig) ? CODE_TO_LINE[orig] : null)
-                || CODE_TO_LINE[dest] || CODE_TO_LINE[orig];
-    if(lineId) pts=linePts[lineId];
-  }
-  // City-only codes (BRBR, BNBN, BRBD etc) → inner Beenleigh corridor
-  if(!pts && code.length>=4){
-    const orig=code.slice(0,2), dest=code.slice(2,4);
-    if(CITY_CODES.has(orig)&&CITY_CODES.has(dest)) pts=linePts['BEL'];
-  }
-  if(!pts||!pts.length) pts=linePts['CAB']||[];
-  if(!pts||!pts.length) return {x:0,y:0};
-  const nn=s=>s.toLowerCase().replace(/\s*\(\w+\)$/,'').replace(/,?\s*platform\s*\d+\s*$/i,'').replace(/\s+station$/i,'').trim();
-  const nxt=nn(v.next_stops?.[0]?.stop_name||'');
-  const cur=nn(v.current_stop_name||'');
-  const fw=w=>w.split(' ')[0];
-  let ni=-1,ci=-1;
+const nn=s=>s.toLowerCase().replace(/\s*\(\w+\)$/,'').replace(/,?\s*platform\s*\d+\s*$/i,'').replace(/\s+station$/i,'').trim();
+
+function findInPts(pts, cur, nxt){
+  let ni=-1, ci=-1;
+  // Use exact match first, then prefix only if both sides are single-word
+  const match=(sn,q)=>q&&(sn===q||(sn.includes(' ')===false&&q.includes(' ')===false&&(sn.startsWith(q)||q.startsWith(sn))));
   for(let i=0;i<pts.length;i++){
     const sn=nn(pts[i].name);
-    if(ni<0&&nxt&&(sn===nxt||sn.startsWith(fw(nxt))||nxt.startsWith(fw(sn))))ni=i;
-    if(ci<0&&cur&&(sn===cur||sn.startsWith(fw(cur))||cur.startsWith(fw(sn))))ci=i;
+    if(ni<0&&match(sn,nxt))ni=i;
+    if(ci<0&&match(sn,cur))ci=i;
   }
+  return{ni,ci};
+}
+
+function trainPos(v){
+  const cur=nn(v.current_stop_name||'');
+  const nxt=nn(v.next_stops?.[0]?.stop_name||'');
+
+  // Step 1: find the line whose linePts contain the current/next stop.
+  // This handles through-services correctly (IPCA at Ipswich → uses IPL points).
+  let bestPts=null, bestScore=0;
+  for(const[lid,pts] of Object.entries(linePts)){
+    if(!pts||!pts.length) continue;
+    const{ni,ci}=findInPts(pts,cur,nxt);
+    const score=(ci>=0?2:0)+(ni>=0?1:0);
+    if(score>bestScore){bestScore=score;bestPts=pts;}
+  }
+
+  // Step 2: fall back to route_id code if no stop match
+  if(!bestPts||bestScore===0){
+    const code=(v.route_id||'').toUpperCase().split('-')[0];
+    const orig=code.slice(0,2), dest=code.length>=4?code.slice(2,4):'';
+    const lid=(!CITY_CODES.has(dest)&&PREFIX_TO_LINE[dest])||(!CITY_CODES.has(orig)&&PREFIX_TO_LINE[orig])||PREFIX_TO_LINE[dest]||PREFIX_TO_LINE[orig];
+    if(lid) bestPts=linePts[lid];
+    if(!bestPts&&CITY_CODES.has(orig)&&CITY_CODES.has(dest)) bestPts=linePts['BEL'];
+    bestPts=bestPts||linePts['CAB']||[];
+  }
+
+  const pts=bestPts;
+  if(!pts||!pts.length) return{x:0,y:0};
+  const{ni,ci}=findInPts(pts,cur,nxt);
   if(ni<0&&ci<0)return pts[Math.floor(pts.length/2)]||{x:0,y:0};
   if(v.current_status==='STOPPED_AT'||ni<0)return pts[ci>=0?ci:0]||pts[0];
   const fi=ci>=0?ci:Math.max(0,ni-1);
@@ -530,9 +544,9 @@ function draw(){
     ctx.fillStyle='rgba(255,255,255,.2)';
     ctx.beginPath();ctx.rect(x-TW/2+rx,y-TH/2,TW-rx*2,TH*0.35);ctx.fill();
 
-    // Stopped alert ring
-    if(v.stopped_alert){
-      ctx.beginPath();ctx.arc(x,y,TH*1.8,0,Math.PI*2);
+    // Stopped alert ring (only when not selected — selected train already has a ring)
+    if(v.stopped_alert && !sel){
+      ctx.beginPath();ctx.arc(x,y,TH*1.6,0,Math.PI*2);
       ctx.strokeStyle='#ff4444';ctx.lineWidth=2/vp.scale;
       ctx.globalAlpha=0.5+0.4*Math.abs(Math.sin(Date.now()/600));
       ctx.stroke();ctx.globalAlpha=1;
@@ -677,34 +691,40 @@ function selectTrain(id){const v=vehicles.find(x=>x.id===id);if(!v)return;if(sel
 const animState = {};  // vid → {fromX,fromY,toX,toY,progress,lastPoll}
 let lastTick = null;
 
+// Update animState targets from fresh poll data — called once per refresh(), NOT per draw
+function syncAnimTargets() {
+  for (const v of vehicles) {
+    const target = trainPos(v);
+    let s = animState[v.id];
+    if (!s) {
+      animState[v.id] = {
+        x: target.x, y: target.y,
+        fromX: target.x, fromY: target.y,
+        toX: target.x, toY: target.y,
+        progress: 1,
+      };
+    } else {
+      const moved = Math.hypot(target.x - s.toX, target.y - s.toY) > 0.5;
+      if (moved) {
+        s.fromX = s.x; s.fromY = s.y;
+        s.toX = target.x; s.toY = target.y;
+        s.progress = 0;
+      }
+    }
+  }
+}
+
+// animPos just reads the current interpolated position — safe to call every frame
 function animPos(v) {
-  // Get the schematic target position from trainPos
-  const target = trainPos(v);
-  let s = animState[v.id];
-  if (!s) {
-    // First time seen — place exactly at target
-    s = animState[v.id] = {
-      x: target.x, y: target.y,
-      fromX: target.x, fromY: target.y,
-      toX: target.x,   toY: target.y,
-      progress: 1,
-    };
-    return s;
-  }
-  // If target moved (new poll arrived), start a new tween
-  const dx = target.x - s.toX, dy = target.y - s.toY;
-  if (Math.hypot(dx, dy) > 0.5) {
-    s.fromX = s.x; s.fromY = s.y;
-    s.toX   = target.x; s.toY = target.y;
-    s.progress = 0;
-  }
+  const s = animState[v.id];
+  if (!s) { const t=trainPos(v); return t; }
   return s;
 }
 
 function animTick(ts) {
   const dt = lastTick ? Math.min((ts - lastTick) / 1000, 0.5) : 0.016;
   lastTick = ts;
-  const step = dt / 13; // reach target in ~13s (one poll interval)
+  const step = dt / 13;
   for (const v of vehicles) {
     const s = animState[v.id];
     if (!s || s.progress >= 1) continue;
@@ -723,6 +743,7 @@ async function refresh(){
   try{
     const r=await fetch(API_BASE+'/vehicles'),d=await r.json();
     vehicles=d.vehicles||[];
+    syncAnimTargets();
     const late=vehicles.filter(v=>(v.delay_seconds||0)>60).length;
     document.getElementById('hcount').textContent=d.count||0;
     document.getElementById('hlate').textContent=late;
@@ -741,7 +762,7 @@ function resize(){
   buildLayout(canW,canH);centreRoma();draw();
 }
 window.addEventListener('resize',resize);
-resize();refresh().then(()=>requestAnimationFrame(animTick));setInterval(refresh,15000);
+resize();loadLineStops();refresh().then(()=>requestAnimationFrame(animTick));setInterval(refresh,15000);
 
 // ── Sidebar toggle ─────────────────────────────────────────────────────────
 function toggleSidebar(){
